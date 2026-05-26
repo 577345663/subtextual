@@ -280,8 +280,27 @@
     .modal.open { display: flex; }
     .modal-card { width: 500px; max-width: 92vw; max-height: 90vh; overflow: auto; background: var(--screen); color: var(--text); border: 1px solid var(--border); padding: 16px; box-shadow: 0 18px 80px rgba(0,0,0,.6); }
     .modal-card.wide { width: 620px; }
+    .modal-card.info { width: 700px; }
     .modal-card.tiny { width: 330px; padding: 14px; }
     .modal-card.tiny .modal-actions { justify-content: center; }
+    .modal-card.toast-card {
+      width: auto;
+      min-width: 260px;
+      max-width: 90vw;
+      padding: 12px 16px;
+      text-align: center;
+    }
+    .modal.toast {
+      background: rgba(0,0,0,.28);
+      pointer-events: none;
+    }
+    .modal.toast .modal-card {
+      pointer-events: auto;
+    }
+    .modal-copy strong {
+      color: var(--text);
+      font-weight: 800;
+    }
     .modal-title { font-weight: 800; margin-bottom: 12px; letter-spacing: .02em; }
     .modal-copy { color: var(--muted); line-height: 1.45; margin-bottom: 12px; white-space: pre-wrap; }
     .remember-row { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; user-select: none; margin-right: auto; white-space: nowrap; }
@@ -380,8 +399,8 @@
       <div class="menu-item" onclick="toggleTopMenu(event, 'helpMenu')" onmouseenter="hoverTopMenu('helpMenu')" onmouseleave="queueCloseMenus()">
         <span class="menu-label">Help</span>
         <div class="top-dropdown" id="helpMenu">
-          <div class="dropdown-row" onclick="openAboutModal()">About</div>
           <div class="dropdown-row" onclick="openInfoModal()">Info</div>
+          <div class="dropdown-row" onclick="openAboutModal()">About</div>
         </div>
       </div>
 
@@ -441,12 +460,12 @@ Load Defaults starts with a practical set of intent keys. Start Fresh begins wit
 
   <div class="modal" id="resetModal">
     <div class="modal-card">
-      <div class="modal-title">Reset Subtextual</div>
+      <div class="modal-title">Reset Subtextual 💭</div>
       <div class="modal-copy">Choose how much to reset.
 
-Writing Only removes editor text and generated output. Your current keys, mode, view, and shortcut setup stay in place.
+💭 <strong>Writing Only</strong> removes editor text and generated output. Your current keys, mode, view, and shortcut setup stay in place.
 
-Reset Everything returns this session to the startup choice you selected.</div>
+💭 <strong>Reset Everything</strong> returns this session to the startup choice you selected.</div>
       <div class="modal-actions">
         <button class="modal-btn secondary" onclick="closeModal('resetModal')">Cancel</button>
         <button class="modal-btn" onclick="resetWritingOnly()">Writing Only</button>
@@ -457,12 +476,16 @@ Reset Everything returns this session to the startup choice you selected.</div>
 
   <div class="modal" id="aboutModal">
     <div class="modal-card">
-      <div class="modal-title">About Subtextual</div>
+      <div class="modal-title">About Subtextual 💭</div>
       <div class="modal-copy">Subtextual
 
 Text with intent.
 
-Subtextual is a browser-based semantic writing editor for plain text, prompt drafting, scene notes, dialogue fragments, and any writing where the meaning underneath the words matters.
+💭 Subtextual is a browser-based semantic writing editor for plain text, prompt drafting, scene notes, dialogue fragments, and any writing where the meaning underneath the words matters.
+
+💭 The colors are visual. The export carries the intent map.
+
+💭 No login required. No server-side account needed.
 
 Created by Vibe Labs.
 Website: subtextual.xyz
@@ -472,32 +495,35 @@ Social links, credits, and contact info can live here later.</div>
   </div>
 
   <div class="modal" id="infoModal">
-    <div class="modal-card">
-      <div class="modal-title">Info</div>
-      <div class="modal-copy">Function keys
-Use F1 through F8 to switch intent while writing. Wide screen mode reveals F9 and F10. Ultrawide reveals F11 and F12. Each slot has an assignable intent and a fixed visual color.
+    <div class="modal-card info">
+      <div class="modal-title">Info 💭</div>
+      <div class="modal-copy"><strong>Function keys</strong>
+💭 Use F1 through F8 to switch intent while writing. Wide screen reveals F9 and F10. Ultrawide reveals F11 and F12. Each slot has an assignable intent and a fixed visual color.
 
-Writing surface
-Type normally in the main editor. The active intent colors new text as you write. B, I, and U apply basic visual formatting. The semantic export cares about text and intent, not fonts or themes.
+<strong>Writing surface</strong>
+💭 Type normally in the main editor. The active intent colors new text as you write. B, I, and U are visual writing tools. The semantic export cares about text and intent, not fonts or themes.
 
-File
-Open loads a saved Subtextual project. Save stores the current project with text, intent spans, key assignments, mode, shortcuts, and view settings. Save As exports plain text only. Reset lets you choose Writing Only or Reset Everything.
+<strong>File</strong>
+💭 Open loads a saved Subtextual project. Save stores the current project as JSON with text, intent spans, key assignments, mode, shortcuts, and view settings. Save As exports plain .txt only. Reset lets you choose Writing Only or Reset Everything.
 
-Mode
-Freeform keeps only the editor and intent keys. Prompt adds five prompt-building shortcut buttons plus Setup. Scene adds five user-defined shortcut buttons plus Setup.
+<strong>Mode</strong>
+💭 Freeform keeps only the editor and intent keys. Prompt adds five prompt-building shortcut buttons plus Setup. Scene adds five user-defined shortcut buttons plus Setup.
 
-View
-Flavors change the app color theme. Patterns change the background. Screen changes the page width and how many function keys are visible. Fonts change the editor font only. Remember me only restores visual settings: flavor, pattern, screen, and font. It does not restore your writing.
+<strong>View</strong>
+💭 Flavors change the app color theme. Patterns change the background. Screen changes the page width and how many function keys are visible. Fonts change the editor font only.
 
-Output
-Generate builds the semantic payload from the current writing surface. Copy places that payload on your clipboard. Clear empties the generated payload box without changing the writing surface.</div>
+<strong>Remember me</strong>
+💭 Remember me only restores visual settings on this browser: flavor, pattern, screen, and font. It does not restore your writing.
+
+<strong>Output</strong>
+💭 Generate builds a base64 Subtextual payload. The instructions are inside the encoded JSON package. Copy places that payload on your clipboard. Clear empties the generated payload box without changing the writing surface.</div>
       <div class="modal-actions"><button class="modal-btn" onclick="closeModal('infoModal')">Close</button></div>
     </div>
   </div>
 
   <div class="modal" id="promptSetupModal">
     <div class="modal-card wide">
-      <div class="modal-title">Prompt Shortcuts</div>
+      <div class="modal-title">Prompt Shortcuts 💭</div>
       <div class="modal-copy">Choose up to five prompt labels for the shortcut row. These buttons insert reusable prompt headings at the cursor; they do not change the semantic payload by themselves.</div>
       <div class="setup-grid" id="promptChoices"></div>
       <div class="setup-field"><label>Custom 1</label><input id="promptCustom1" placeholder="Optional custom label" /></div>
@@ -511,7 +537,7 @@ Generate builds the semantic payload from the current writing surface. Copy plac
 
   <div class="modal" id="sceneSetupModal">
     <div class="modal-card">
-      <div class="modal-title">Scene Shortcuts</div>
+      <div class="modal-title">Scene Shortcuts 💭</div>
       <div class="modal-copy">Define the five scene shortcut buttons. Use them for characters, places, objects, speakers, recurring references, or any labels you type often.</div>
       <div id="sceneFields"></div>
       <div class="modal-actions">
@@ -523,7 +549,7 @@ Generate builds the semantic payload from the current writing surface. Copy plac
 
   <div class="modal" id="unlockModal">
     <div class="modal-card tiny">
-      <div class="modal-title">OK! OK! Here's something new.</div>
+      <div class="modal-title">OK! OK! Here's something new. 💭</div>
       <div class="modal-copy">Unlocked:
 
 • Flavor: Pepper
@@ -531,6 +557,13 @@ Generate builds the semantic payload from the current writing surface. Copy plac
 
 These are now available from the View menu.</div>
       <div class="modal-actions"><button class="modal-btn" onclick="closeModal('unlockModal')">Nice</button></div>
+    </div>
+  </div>
+
+
+  <div class="modal toast" id="toastModal">
+    <div class="modal-card toast-card">
+      <div class="modal-copy" id="toastCopy">Saved.</div>
     </div>
   </div>
 
@@ -968,7 +1001,7 @@ These are now available from the View menu.</div>
       const packageJson = {
         schema: 'subtextual.intentPayload.v1',
         app: 'Subtextual',
-        version: '0.12',
+        version: '0.13',
         purpose: 'semantic_text_transport',
         readableTextField: 'plain',
         nonReadableFields: ['intentMap', 'metadata', 'instructions'],
@@ -1009,24 +1042,56 @@ These are now available from the View menu.</div>
     }
     function clearPayload() { output.value = ''; note('Output cleared.'); }
 
+    let toastTimer = null;
+    function showToast(message, ms = 900) {
+      const modal = document.getElementById('toastModal');
+      const copy = document.getElementById('toastCopy');
+      if (!modal || !copy) return;
+      clearTimeout(toastTimer);
+      copy.textContent = message;
+      modal.classList.add('open');
+      toastTimer = setTimeout(() => modal.classList.remove('open'), ms);
+    }
+
     function saveSubtextualFile() {
       closeTopMenus();
-      const payload = {
-        app: 'Subtextual',
-        version: '0.12',
-        html: editor.innerHTML,
-        hotkeys,
-        activeSlot,
-        startupMode,
-        currentMode,
-        promptSlots,
-        sceneSlots,
-        view: { flavor: currentFlavor, pattern: currentPattern, screen: currentScreen, font: currentFont }
-      };
-      downloadFile('subtextual-document.subtextual.json', JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
-      note('Subtextual project saved.');
+      try {
+        const payload = {
+          app: 'Subtextual',
+          version: '0.13',
+          html: editor.innerHTML,
+          hotkeys,
+          activeSlot,
+          startupMode,
+          currentMode,
+          promptSlots,
+          sceneSlots,
+          view: { flavor: currentFlavor, pattern: currentPattern, screen: currentScreen, font: currentFont }
+        };
+        downloadFile('subtextual-document.subtextual.json', JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
+        note('Subtextual project saved.');
+        showToast('File saved as .json successfully.');
+      } catch (err) {
+        console.error(err);
+        note('Save failed.');
+        showToast('File save failed.');
+      }
     }
-    function savePlainText() { closeTopMenus(); const data = getPlainAndSpans(); downloadFile('subtextual-document.txt', data.text, 'text/plain;charset=utf-8'); note('Plain text saved.'); }
+
+    function savePlainText() {
+      closeTopMenus();
+      try {
+        const data = getPlainAndSpans();
+        downloadFile('subtextual-document.txt', data.text, 'text/plain;charset=utf-8');
+        note('Plain text saved.');
+        showToast('File saved as plain .txt successfully.');
+      } catch (err) {
+        console.error(err);
+        note('Save As failed.');
+        showToast('Plain .txt save failed.');
+      }
+    }
+
     function downloadFile(name, content, type) {
       const blob = new Blob([content], { type });
       const url = URL.createObjectURL(blob);
