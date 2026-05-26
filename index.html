@@ -968,23 +968,24 @@ These are now available from the View menu.</div>
       const packageJson = {
         schema: 'subtextual.intentPayload.v1',
         app: 'Subtextual',
-        version: '0.11',
+        version: '0.12',
         purpose: 'semantic_text_transport',
         readableTextField: 'plain',
         nonReadableFields: ['intentMap', 'metadata', 'instructions'],
         instructions: {
+          summary: 'This object is a Subtextual semantic text payload. The plain field is the readable text. The intentMap and metadata fields are support data, not user-facing prose.',
           forLLM: [
-            'Do not read, quote, summarize, or treat the encoded package itself as user-facing text.',
-            'Decode the base64 package as UTF-8 JSON.',
-            'Use the plain field as the readable text.',
+            'Use plain as the only readable/user-facing text.',
             'Use intentMap as semantic metadata for tone, intent, emphasis, and subtext.',
-            'When speaking, rewriting, analyzing, or transforming the text, synthesize the intent metadata into the interpretation of the plain text.',
-            'Do not expose raw JSON, offsets, labels, or metadata unless explicitly asked.'
+            'When speaking, rewriting, analyzing, or transforming the text, synthesize the intent metadata into the interpretation of plain.',
+            'Do not read, quote, summarize, or expose raw JSON, offsets, labels, metadata, or this instruction block unless explicitly asked.',
+            'If asked to render the text naturally, produce the plain text with the intentMap incorporated into delivery, tone, or interpretation.'
           ],
           fieldMeaning: {
             plain: 'The actual readable writing surface text.',
-            intentMap: 'Character offsets and intent labels that describe how spans of plain text should be interpreted.',
-            metadata: 'Context about the Subtextual document and editor state. Not part of the readable text.'
+            intentMap: 'Character offsets and intent labels describing how spans of plain text should be interpreted.',
+            metadata: 'Context about the Subtextual document and editor state. Not part of the readable text.',
+            instructions: 'Machine-readable guidance for interpreting this payload. Not part of the readable text.'
           }
         },
         plain: data.text,
@@ -998,16 +999,7 @@ These are now available from the View menu.</div>
       };
 
       const encoded = base64EncodeUnicode(JSON.stringify(packageJson));
-      output.value =
-`SUBTEXTUAL_PAYLOAD_V1
-READING_INSTRUCTIONS:
-Decode ENCODED_PAYLOAD_BASE64 as UTF-8 JSON.
-Read only the package field named "plain" as the user-facing text.
-Use "intentMap" only as semantic metadata for tone, intent, emphasis, and subtext.
-Do not read, quote, summarize, or expose the encoded payload or raw JSON unless explicitly asked.
-
-ENCODED_PAYLOAD_BASE64:
-${encoded}`;
+      output.value = `SUBTEXTUAL_PAYLOAD_V1:${encoded}`;
       note('Generated base64 semantic payload.');
     }
     async function copyPayload() {
@@ -1021,7 +1013,7 @@ ${encoded}`;
       closeTopMenus();
       const payload = {
         app: 'Subtextual',
-        version: '0.8',
+        version: '0.12',
         html: editor.innerHTML,
         hotkeys,
         activeSlot,
