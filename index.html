@@ -301,6 +301,38 @@
       color: var(--text);
       font-weight: 800;
     }
+    .splash-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .splash-copy {
+      color: var(--muted);
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+    .splash-list {
+      display: grid;
+      gap: 8px;
+      margin: 12px 0 4px;
+    }
+    .splash-row {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 8px;
+      align-items: start;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .splash-row .bubble {
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .splash-row strong {
+      color: var(--text);
+      font-weight: 800;
+    }
+
     .modal-title { font-weight: 800; margin-bottom: 12px; letter-spacing: .02em; }
     .modal-copy { color: var(--muted); line-height: 1.45; margin-bottom: 12px; white-space: pre-wrap; }
     .remember-row { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; user-select: none; margin-right: auto; white-space: nowrap; }
@@ -446,10 +478,15 @@
 
   <div class="modal open" id="initModal">
     <div class="modal-card">
-      <div class="modal-title">Welcome to Subtextual</div>
-      <div class="modal-copy">Subtextual is a semantic writing surface for marking the intent behind your words. Assign intents to the function-key row, switch modes while typing, and export the finished text with a clean intent map.
-
-Load Defaults starts with a practical set of intent keys. Start Fresh begins with neutral keys so you can build your own setup. Colors, fonts, flavors, and patterns are visual guides only.</div>
+      <div class="modal-title">Welcome to Subtextual 💭</div>
+      <div class="splash-copy">Subtextual is a free browser-based semantic writing editor for marking the intent, tone, and subtext behind your words. No login required.</div>
+      <div class="splash-list">
+        <div class="splash-row"><span class="bubble">💭</span><span><strong>Write with intent.</strong> Use function keys to switch semantic modes while you type.</span></div>
+        <div class="splash-row"><span class="bubble">💭</span><span><strong>Visual, not permanent.</strong> Colors, fonts, flavors, and patterns help you work, but they do not change the plain text.</span></div>
+        <div class="splash-row"><span class="bubble">💭</span><span><strong>Portable payloads.</strong> Generate base64 Subtextual output when you want to carry the meaning layer with the text.</span></div>
+        <div class="splash-row"><span class="bubble">💭</span><span><strong>Your browser does the work.</strong> Save your project file if you want to keep it.</span></div>
+      </div>
+      <div class="splash-copy">Load Defaults starts with a practical key setup. Start Fresh begins with neutral keys so you can build your own.</div>
       <div class="modal-actions">
         <label class="remember-row"><input type="checkbox" id="rememberPrefs" onchange="setRememberPreference(this.checked)" /> <span>Remember me</span></label>
         <button class="modal-btn secondary" onclick="startFresh()">Start Fresh</button>
@@ -463,9 +500,9 @@ Load Defaults starts with a practical set of intent keys. Start Fresh begins wit
       <div class="modal-title">Reset Subtextual 💭</div>
       <div class="modal-copy">Choose how much to reset.
 
-💭 <strong>Writing Only</strong> removes editor text and generated output. Your current keys, mode, view, and shortcut setup stay in place.
+<strong>Writing Only</strong> removes editor text and generated output. Your current keys, mode, view, and shortcut setup stay in place.
 
-💭 <strong>Reset Everything</strong> returns this session to the startup choice you selected.</div>
+<strong>Reset Everything</strong> returns this session to the startup choice you selected.</div>
       <div class="modal-actions">
         <button class="modal-btn secondary" onclick="closeModal('resetModal')">Cancel</button>
         <button class="modal-btn" onclick="resetWritingOnly()">Writing Only</button>
@@ -481,11 +518,11 @@ Load Defaults starts with a practical set of intent keys. Start Fresh begins wit
 
 Text with intent.
 
-💭 Subtextual is a browser-based semantic writing editor for plain text, prompt drafting, scene notes, dialogue fragments, and any writing where the meaning underneath the words matters.
+Subtextual is a browser-based semantic writing editor for plain text, prompt drafting, scene notes, dialogue fragments, and any writing where the meaning underneath the words matters.
 
-💭 The colors are visual. The export carries the intent map.
+The colors are visual. The export carries the intent map.
 
-💭 No login required. No server-side account needed.
+No login required. No server-side account needed.
 
 Created by Vibe Labs.
 Website: subtextual.xyz
@@ -496,27 +533,27 @@ Social links, credits, and contact info can live here later.</div>
 
   <div class="modal" id="infoModal">
     <div class="modal-card info">
-      <div class="modal-title">Info 💭</div>
+      <div class="modal-title">Subtextual Guide 💭</div>
       <div class="modal-copy"><strong>Function keys</strong>
-💭 Use F1 through F8 to switch intent while writing. Wide screen reveals F9 and F10. Ultrawide reveals F11 and F12. Each slot has an assignable intent and a fixed visual color.
+Use F1 through F8 to switch intent while writing. Wide screen reveals F9 and F10. Ultrawide reveals F11 and F12. Each slot has an assignable intent and a fixed visual color.
 
 <strong>Writing surface</strong>
-💭 Type normally in the main editor. The active intent colors new text as you write. B, I, and U are visual writing tools. The semantic export cares about text and intent, not fonts or themes.
+Type normally in the main editor. The active intent colors new text as you write. B, I, and U are visual writing tools. The semantic export cares about text and intent, not fonts or themes.
 
 <strong>File</strong>
-💭 Open loads a saved Subtextual project. Save stores the current project as JSON with text, intent spans, key assignments, mode, shortcuts, and view settings. Save As exports plain .txt only. Reset lets you choose Writing Only or Reset Everything.
+Open loads a saved Subtextual project. Save stores the current project as JSON with text, intent spans, key assignments, mode, shortcuts, and view settings. Save As exports plain .txt only. Reset lets you choose Writing Only or Reset Everything.
 
 <strong>Mode</strong>
-💭 Freeform keeps only the editor and intent keys. Prompt adds five prompt-building shortcut buttons plus Setup. Scene adds five user-defined shortcut buttons plus Setup.
+Freeform keeps only the editor and intent keys. Prompt adds five prompt-building shortcut buttons plus Setup. Scene adds five user-defined shortcut buttons plus Setup.
 
 <strong>View</strong>
-💭 Flavors change the app color theme. Patterns change the background. Screen changes the page width and how many function keys are visible. Fonts change the editor font only.
+Flavors change the app color theme. Patterns change the background. Screen changes the page width and how many function keys are visible. Fonts change the editor font only.
 
 <strong>Remember me</strong>
-💭 Remember me only restores visual settings on this browser: flavor, pattern, screen, and font. It does not restore your writing.
+Remember me only restores visual settings on this browser: flavor, pattern, screen, and font. It does not restore your writing.
 
 <strong>Output</strong>
-💭 Generate builds a base64 Subtextual payload. The instructions are inside the encoded JSON package. Copy places that payload on your clipboard. Clear empties the generated payload box without changing the writing surface.</div>
+Generate builds a base64 Subtextual payload. The instructions are inside the encoded JSON package. Copy places that payload on your clipboard. Clear empties the generated payload box without changing the writing surface.</div>
       <div class="modal-actions"><button class="modal-btn" onclick="closeModal('infoModal')">Close</button></div>
     </div>
   </div>
@@ -1001,7 +1038,7 @@ These are now available from the View menu.</div>
       const packageJson = {
         schema: 'subtextual.intentPayload.v1',
         app: 'Subtextual',
-        version: '0.13',
+        version: '0.14',
         purpose: 'semantic_text_transport',
         readableTextField: 'plain',
         nonReadableFields: ['intentMap', 'metadata', 'instructions'],
@@ -1058,7 +1095,7 @@ These are now available from the View menu.</div>
       try {
         const payload = {
           app: 'Subtextual',
-          version: '0.13',
+          version: '0.14',
           html: editor.innerHTML,
           hotkeys,
           activeSlot,
