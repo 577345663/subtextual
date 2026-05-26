@@ -44,8 +44,9 @@
       margin: 0;
       min-height: 100vh;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
       background: var(--bg);
       color: var(--text);
       font-family: "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", system-ui, sans-serif;
@@ -229,6 +230,20 @@
     .tool-btn.dark { background: #111; color: var(--text); }
     .tool-btn.shortcut { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .tool-btn.setup { flex: 0 0 74px; }
+    .tool-btn.format-btn {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 30px;
+    }
+    .tool-btn.format-btn.active {
+      background: var(--active-intent);
+      color: #000;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.45);
+    }
     .tool-btn:active { transform: translateY(1px); }
 
     .side-panel { gap: 0; }
@@ -265,6 +280,8 @@
     .modal.open { display: flex; }
     .modal-card { width: 500px; max-width: 92vw; max-height: 90vh; overflow: auto; background: var(--screen); color: var(--text); border: 1px solid var(--border); padding: 16px; box-shadow: 0 18px 80px rgba(0,0,0,.6); }
     .modal-card.wide { width: 620px; }
+    .modal-card.tiny { width: 330px; padding: 14px; }
+    .modal-card.tiny .modal-actions { justify-content: center; }
     .modal-title { font-weight: 800; margin-bottom: 12px; letter-spacing: .02em; }
     .modal-copy { color: var(--muted); line-height: 1.45; margin-bottom: 12px; white-space: pre-wrap; }
     .remember-row { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; user-select: none; margin-right: auto; white-space: nowrap; }
@@ -278,6 +295,20 @@
     .setup-field label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
     .setup-field input { width: 100%; background: #111; color: var(--text); border: 1px solid var(--border); padding: 8px; font: inherit; }
     .hidden-file { display: none; }
+
+
+    #content { display: none; }
+    .footer {
+      width: 1000px;
+      max-width: 96vw;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+      user-select: none;
+    }
+    #bezel.wide ~ .footer { width: 1180px; }
+    #bezel.ultra ~ .footer { width: 96vw; }
 
     @media (max-width: 900px) {
       body { overflow: auto; }
@@ -366,9 +397,9 @@
         <div id="editor" class="editor" contenteditable="true" spellcheck="true"></div>
         <div class="editor-tools">
           <div class="format-row">
-            <button class="tool-btn" onclick="formatText('bold')"><strong>B</strong></button>
-            <button class="tool-btn" onclick="formatText('italic')"><em>I</em></button>
-            <button class="tool-btn" onclick="formatText('underline')"><u>U</u></button>
+            <button class="tool-btn format-btn" id="boldBtn" onclick="formatText('bold')" title="Bold"><strong>B</strong></button>
+            <button class="tool-btn format-btn" id="italicBtn" onclick="formatText('italic')" title="Italic"><em>I</em></button>
+            <button class="tool-btn format-btn" id="underlineBtn" onclick="formatText('underline')" title="Underline"><u>U</u></button>
             <div class="mode-row" id="modeRow"></div>
           </div>
         </div>
@@ -389,6 +420,8 @@
       </aside>
     </div>
   </div>
+  <div id="content"></div>
+  <div class="footer">© 2026 Subtextual.xyz</div>
 
   <input class="hidden-file" type="file" id="openFileInput" accept=".json,.txt,.subtextual" />
 
@@ -487,13 +520,9 @@ Generate builds the semantic payload from the current writing surface. Copy plac
       </div>
     </div>
   </div>
-  
-<div id="content"></div>
-<div class="footer">© 2026 Subtextual.xyz</div>
 
-</div>
   <div class="modal" id="unlockModal">
-    <div class="modal-card">
+    <div class="modal-card tiny">
       <div class="modal-title">OK! OK! Here's something new.</div>
       <div class="modal-copy">Unlocked:
 
@@ -516,6 +545,7 @@ These are now available from the View menu.</div>
     let currentMode = 'freeform';
     let activeSlot = 0;
     let savedRange = null;
+    let activeFormats = { bold: false, italic: false, underline: false };
     let suppressPreferenceSave = true;
     const rememberKey = 'subtextual_remember_visuals';
     const visualPrefsKey = 'subtextual_visual_preferences';
@@ -760,6 +790,9 @@ These are now available from the View menu.</div>
       const span = document.createElement('span');
       span.dataset.intent = intent.id;
       span.style.color = intent.color;
+      if (activeFormats.bold) span.style.fontWeight = '700';
+      if (activeFormats.italic) span.style.fontStyle = 'italic';
+      if (activeFormats.underline) span.style.textDecoration = 'underline';
       span.textContent = text;
       range.insertNode(span);
       range.setStartAfter(span);
@@ -789,7 +822,31 @@ These are now available from the View menu.</div>
 
     function keepCaretVisible() { requestAnimationFrame(() => { editor.scrollTop = editor.scrollHeight; }); }
 
-    function formatText(cmd) { restoreSelection(); editor.focus(); document.execCommand(cmd, false, null); saveSelection(); note(`${cmd.charAt(0).toUpperCase() + cmd.slice(1)} toggled.`); }
+    function updateFormatButtons() {
+      const map = { bold: 'boldBtn', italic: 'italicBtn', underline: 'underlineBtn' };
+      Object.keys(map).forEach(key => {
+        const btn = document.getElementById(map[key]);
+        if (btn) btn.classList.toggle('active', !!activeFormats[key]);
+      });
+    }
+
+    function formatText(cmd) {
+      restoreSelection();
+      editor.focus();
+
+      const sel = window.getSelection();
+      const hasSelection = sel && sel.rangeCount && !sel.getRangeAt(0).collapsed && editor.contains(sel.anchorNode);
+
+      activeFormats[cmd] = !activeFormats[cmd];
+
+      if (hasSelection) {
+        document.execCommand(cmd, false, null);
+      }
+
+      updateFormatButtons();
+      saveSelection();
+      note(`${cmd.charAt(0).toUpperCase() + cmd.slice(1)} ${activeFormats[cmd] ? 'on' : 'off'}.`);
+    }
 
     function setMode(mode) {
       currentMode = mode;
@@ -968,7 +1025,14 @@ These are now available from the View menu.</div>
       note('Plain text loaded using the active intent.');
     });
 
-    function clearWritingSurface(message) { editor.innerHTML = ''; output.value = ''; savedRange = null; note(message); }
+    function clearWritingSurface(message) {
+      editor.innerHTML = '';
+      output.value = '';
+      savedRange = null;
+      activeFormats = { bold: false, italic: false, underline: false };
+      updateFormatButtons();
+      note(message);
+    }
     function resetWritingOnly() { closeModal('resetModal'); clearWritingSurface('Writing only reset. Settings kept.'); }
     function resetEverything() {
       closeModal('resetModal');
@@ -1046,6 +1110,7 @@ These are now available from the View menu.</div>
       osc.onended = () => { osc.disconnect(); gain.disconnect(); };
     }
 
+    let sigilClickCount = 0;
     const sigilSayings = [
       'Subtext preserved.', 'Meaning layer stable.', 'The words are not the whole message.',
       'Tone is doing quiet work.', 'Intent marker acknowledged.', 'Plain text, complicated feelings.',
@@ -1077,8 +1142,8 @@ These are now available from the View menu.</div>
     document.getElementById('sigil').addEventListener('click', e => {
       e.stopPropagation();
       playThoughtBubbleSound();
-      const count = Number(localStorage.getItem('subtextual_sigil_clicks') || '0') + 1;
-      localStorage.setItem('subtextual_sigil_clicks', String(count));
+      sigilClickCount += 1;
+      const count = sigilClickCount;
       if (count === 33) { note("That's a lot of clicks."); return; }
       if (count === 66) { note('Maybe you are onto something?'); return; }
       if (count === 99) { unlockSpice(); return; }
