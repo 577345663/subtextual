@@ -267,6 +267,8 @@
     .modal-card.wide { width: 620px; }
     .modal-title { font-weight: 800; margin-bottom: 12px; letter-spacing: .02em; }
     .modal-copy { color: var(--muted); line-height: 1.45; margin-bottom: 12px; white-space: pre-wrap; }
+    .remember-row { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; user-select: none; margin-right: auto; white-space: nowrap; }
+    .remember-row input { width: 14px; height: 14px; accent-color: #ffffff; }
     .modal-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 12px; }
     .modal-btn { min-width: 112px; padding: 8px 12px; border: 1px solid var(--border); background: #efefef; color: #000; font: inherit; cursor: pointer; }
     .modal-btn.secondary { background: #111; color: var(--text); }
@@ -397,6 +399,7 @@
 
 Load Defaults starts with a practical set of intent keys. Start Fresh begins with neutral keys so you can build your own setup. Colors, fonts, flavors, and patterns are visual guides only.</div>
       <div class="modal-actions">
+        <label class="remember-row"><input type="checkbox" id="rememberPrefs" onchange="setRememberPreference(this.checked)" /> <span>Remember me</span></label>
         <button class="modal-btn secondary" onclick="startFresh()">Start Fresh</button>
         <button class="modal-btn" onclick="loadDefaults()">Load Defaults</button>
       </div>
@@ -451,7 +454,7 @@ Mode
 Freeform keeps only the editor and intent keys. Prompt adds five prompt-building shortcut buttons plus Setup. Scene adds five user-defined shortcut buttons plus Setup.
 
 View
-Flavors change the app color theme. Patterns change the background. Screen changes the page width and how many function keys are visible. Fonts change the editor font only.
+Flavors change the app color theme. Patterns change the background. Screen changes the page width and how many function keys are visible. Fonts change the editor font only. Remember me only restores visual settings: flavor, pattern, screen, and font. It does not restore your writing.
 
 Output
 Generate builds the semantic payload from the current writing surface. Copy places that payload on your clipboard. Clear empties the generated payload box without changing the writing surface.</div>
@@ -509,6 +512,9 @@ These are now available from the View menu.</div>
     let currentMode = 'freeform';
     let activeSlot = 0;
     let savedRange = null;
+    let suppressPreferenceSave = true;
+    const rememberKey = 'subtextual_remember_visuals';
+    const visualPrefsKey = 'subtextual_visual_preferences';
 
     const flavorMap = {
       vanilla: { bar:'#111111', bezel:'#1a1a1a', screen:'#000000', panel:'#0b0b0b', bg:'#000000' },
@@ -603,6 +609,40 @@ These are now available from the View menu.</div>
 
     function note(text) { document.getElementById('lastAction').textContent = text; }
     function escapeHtml(str) { return String(str).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+
+    function rememberEnabled() { return localStorage.getItem(rememberKey) === '1'; }
+    function setRememberPreference(enabled) {
+      localStorage.setItem(rememberKey, enabled ? '1' : '0');
+      if (enabled) { saveVisualPrefs(true); note('Visual settings will be remembered on this browser.'); }
+      else { localStorage.removeItem(visualPrefsKey); note('Visual settings will not be remembered.'); }
+    }
+    function initRememberCheckbox() {
+      const cb = document.getElementById('rememberPrefs');
+      if (cb) cb.checked = rememberEnabled();
+    }
+    function saveVisualPrefs(force = false) {
+      if (suppressPreferenceSave && !force) return;
+      if (!force && !rememberEnabled()) return;
+      const prefs = { flavor: currentFlavor, pattern: currentPattern, screen: currentScreen, font: currentFont };
+      localStorage.setItem(visualPrefsKey, JSON.stringify(prefs));
+    }
+    function applyRememberedVisualPrefs() {
+      if (!rememberEnabled()) return;
+      try {
+        const prefs = JSON.parse(localStorage.getItem(visualPrefsKey) || '{}');
+        if (prefs.flavor) setFlavor(prefs.flavor);
+        if (prefs.pattern) setPattern(prefs.pattern);
+        if (prefs.screen) setScreen(prefs.screen);
+        if (prefs.font) setFont(prefs.font);
+      } catch (err) { localStorage.removeItem(visualPrefsKey); }
+    }
+    function applySplashRememberChoice() {
+      const cb = document.getElementById('rememberPrefs');
+      if (!cb) return;
+      localStorage.setItem(rememberKey, cb.checked ? '1' : '0');
+      if (cb.checked) saveVisualPrefs(true);
+      else localStorage.removeItem(visualPrefsKey);
+    }
 
     function closeTopMenus() { document.querySelectorAll('.top-dropdown').forEach(el => el.style.display = 'none'); activeTopMenu = null; }
     function queueCloseMenus() { clearTimeout(topMenuCloseTimer); topMenuCloseTimer = setTimeout(() => closeTopMenus(), 120); }
@@ -859,7 +899,7 @@ These are now available from the View menu.</div>
       const data = getPlainAndSpans();
       const payload = {
         app: 'Subtextual',
-        version: '0.5',
+        version: '0.8',
         plain: data.text,
         intentMap: data.spans.map(s => ({ ...s, label: getIntent(s.intent).label })),
         visibleSlots: getVisibleHotkeyCount(),
@@ -879,7 +919,7 @@ These are now available from the View menu.</div>
       closeTopMenus();
       const payload = {
         app: 'Subtextual',
-        version: '0.5',
+        version: '0.8',
         html: editor.innerHTML,
         hotkeys,
         activeSlot,
@@ -937,8 +977,8 @@ These are now available from the View menu.</div>
       buildHotkeyStrip(); updateActiveIntentUI();
     }
 
-    function setFlavor(name) { currentFlavor = name; const f = flavorMap[name] || flavorMap.vanilla; document.documentElement.style.setProperty('--bar', f.bar); document.documentElement.style.setProperty('--bezel', f.bezel); document.documentElement.style.setProperty('--screen', f.screen); document.documentElement.style.setProperty('--panel', f.panel); document.documentElement.style.setProperty('--bg', f.bg); updateChecks(); }
-    function setPattern(name) { currentPattern = name; document.body.classList.remove('pattern-horizontal','pattern-vertical','pattern-diagonal','pattern-dots','pattern-chevron','pattern-wavy'); if (name !== 'none') document.body.classList.add(`pattern-${name}`); updateChecks(); }
+    function setFlavor(name) { currentFlavor = name; const f = flavorMap[name] || flavorMap.vanilla; document.documentElement.style.setProperty('--bar', f.bar); document.documentElement.style.setProperty('--bezel', f.bezel); document.documentElement.style.setProperty('--screen', f.screen); document.documentElement.style.setProperty('--panel', f.panel); document.documentElement.style.setProperty('--bg', f.bg); updateChecks(); saveVisualPrefs(); }
+    function setPattern(name) { currentPattern = name; document.body.classList.remove('pattern-horizontal','pattern-vertical','pattern-diagonal','pattern-dots','pattern-chevron','pattern-wavy'); if (name !== 'none') document.body.classList.add(`pattern-${name}`); updateChecks(); saveVisualPrefs(); }
     function setScreen(name) {
       currentScreen = name;
       const bezel = document.getElementById('bezel');
@@ -946,9 +986,9 @@ These are now available from the View menu.</div>
       if (name === 'wide') bezel.classList.add('wide');
       if (name === 'ultra') bezel.classList.add('ultra');
       if (activeSlot >= getVisibleHotkeyCount()) activeSlot = getVisibleHotkeyCount() - 1;
-      buildHotkeyStrip(); updateActiveIntentUI(); updateChecks(); note(`Screen set to ${name}. ${getVisibleHotkeyCount()} function keys visible.`);
+      buildHotkeyStrip(); updateActiveIntentUI(); updateChecks(); saveVisualPrefs(); note(`Screen set to ${name}. ${getVisibleHotkeyCount()} function keys visible.`);
     }
-    function setFont(name) { currentFont = name; document.documentElement.style.setProperty('--editor-font', fontMap[name] || fontMap.system); updateChecks(); note(`Font set to ${name}.`); }
+    function setFont(name) { currentFont = name; document.documentElement.style.setProperty('--editor-font', fontMap[name] || fontMap.system); updateChecks(); saveVisualPrefs(); note(`Font set to ${name}.`); }
     function updateChecks() {
       document.querySelectorAll('[data-flavor]').forEach(el => el.querySelector('.check').classList.toggle('visible', el.dataset.flavor === currentFlavor));
       document.querySelectorAll('[data-pattern]').forEach(el => el.querySelector('.check').classList.toggle('visible', el.dataset.pattern === currentPattern));
@@ -958,6 +998,7 @@ These are now available from the View menu.</div>
     }
 
     function loadDefaultHotkeys(close = true) {
+      if (close) applySplashRememberChoice();
       startupMode = 'defaults';
       hotkeys = defaultHotkeyIds.slice();
       while (hotkeys.length < 12) hotkeys.push('neutral');
@@ -967,6 +1008,7 @@ These are now available from the View menu.</div>
       buildHotkeyStrip(); updateActiveIntentUI(); editor.focus();
     }
     function startFreshHotkeys(close = true) {
+      if (close) applySplashRememberChoice();
       startupMode = 'fresh';
       hotkeys = Array(12).fill('neutral');
       activeSlot = 0;
@@ -1040,13 +1082,17 @@ These are now available from the View menu.</div>
     });
 
     refreshUnlocks();
+    initRememberCheckbox();
     setFlavor('vanilla');
     setPattern('none');
     setScreen('standard');
     setFont('system');
+    applyRememberedVisualPrefs();
+    suppressPreferenceSave = false;
     renderModeRow();
     buildHotkeyStrip();
     updateActiveIntentUI();
+    if (rememberEnabled()) note('Remembered visual settings restored.');
   </script>
 </body>
 </html>
