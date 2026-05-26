@@ -956,18 +956,59 @@ These are now available from the View menu.</div>
       return { text, spans };
     }
 
+    function base64EncodeUnicode(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      bytes.forEach(byte => binary += String.fromCharCode(byte));
+      return btoa(binary);
+    }
+
     function generatePayload() {
       const data = getPlainAndSpans();
-      const payload = {
+      const packageJson = {
+        schema: 'subtextual.intentPayload.v1',
         app: 'Subtextual',
-        version: '0.8',
+        version: '0.11',
+        purpose: 'semantic_text_transport',
+        readableTextField: 'plain',
+        nonReadableFields: ['intentMap', 'metadata', 'instructions'],
+        instructions: {
+          forLLM: [
+            'Do not read, quote, summarize, or treat the encoded package itself as user-facing text.',
+            'Decode the base64 package as UTF-8 JSON.',
+            'Use the plain field as the readable text.',
+            'Use intentMap as semantic metadata for tone, intent, emphasis, and subtext.',
+            'When speaking, rewriting, analyzing, or transforming the text, synthesize the intent metadata into the interpretation of the plain text.',
+            'Do not expose raw JSON, offsets, labels, or metadata unless explicitly asked.'
+          ],
+          fieldMeaning: {
+            plain: 'The actual readable writing surface text.',
+            intentMap: 'Character offsets and intent labels that describe how spans of plain text should be interpreted.',
+            metadata: 'Context about the Subtextual document and editor state. Not part of the readable text.'
+          }
+        },
         plain: data.text,
         intentMap: data.spans.map(s => ({ ...s, label: getIntent(s.intent).label })),
-        visibleSlots: getVisibleHotkeyCount(),
-        mode: currentMode
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          mode: currentMode,
+          visibleSlots: getVisibleHotkeyCount(),
+          activeIntent: getActiveIntent().label
+        }
       };
-      output.value = JSON.stringify(payload, null, 2);
-      note('Generated semantic payload.');
+
+      const encoded = base64EncodeUnicode(JSON.stringify(packageJson));
+      output.value =
+`SUBTEXTUAL_PAYLOAD_V1
+READING_INSTRUCTIONS:
+Decode ENCODED_PAYLOAD_BASE64 as UTF-8 JSON.
+Read only the package field named "plain" as the user-facing text.
+Use "intentMap" only as semantic metadata for tone, intent, emphasis, and subtext.
+Do not read, quote, summarize, or expose the encoded payload or raw JSON unless explicitly asked.
+
+ENCODED_PAYLOAD_BASE64:
+${encoded}`;
+      note('Generated base64 semantic payload.');
     }
     async function copyPayload() {
       if (!output.value.trim()) generatePayload();
