@@ -46,6 +46,13 @@
       background-size: 18px 18px;
       background-position: 0 0, 9px 9px;
     }
+    body.pattern-wavy {
+      background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.055) 0 18%, transparent 19%),
+        radial-gradient(ellipse at 50% 100%, rgba(255,255,255,.04) 0 18%, transparent 19%);
+      background-size: 28px 14px;
+      background-position: 0 0, 14px 7px;
+    }
 
     .bezel {
       width: 1000px;
@@ -175,7 +182,7 @@
       background: rgba(255,255,255,.015);
       flex: 0 0 auto;
     }
-    .format-row, .mode-row {
+    .format-row {
       display: flex;
       flex-wrap: nowrap;
       align-items: center;
@@ -183,7 +190,14 @@
       padding: 8px 10px;
       overflow: hidden;
     }
-    .mode-row { border-top: 1px solid rgba(255,255,255,.08); display: none; }
+    .mode-row {
+      display: none;
+      flex: 1 1 auto;
+      min-width: 0;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+    }
     .mode-row.open { display: flex; }
     .tool-btn {
       border: 1px solid var(--border);
@@ -202,6 +216,7 @@
 
     .side-panel { gap: 0; }
     .side-section { padding: 10px; border-bottom: 1px solid var(--border); }
+    .side-section.status-section { flex: 0 0 auto; }
     .side-section.output-section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
     .side-section.controls-section { border-bottom: none; flex: 0 0 auto; }
     .output-box {
@@ -220,7 +235,6 @@
     .side-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
     .side-grid .tool-btn { width: 100%; min-height: 34px; }
     .last-action {
-      margin-top: 8px;
       border: 1px solid var(--border);
       background: #050505;
       min-height: 46px;
@@ -229,7 +243,6 @@
       font-size: 12px;
       line-height: 1.35;
     }
-    .last-action strong { color: var(--text); }
 
     .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.75); z-index: 500; }
     .modal.open { display: flex; }
@@ -253,8 +266,6 @@
       .hotkey-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .workspace { grid-template-columns: 1fr; }
       .side-panel { min-height: 300px; }
-      .mode-row { flex-wrap: wrap; }
-      .tool-btn.shortcut { flex-basis: 30%; }
     }
   </style>
 </head>
@@ -290,6 +301,7 @@
             <div class="dropdown-row" data-flavor="berry" onclick="setFlavor('berry')"><span>Berry</span><span class="check">✓</span></div>
             <div class="dropdown-row" data-flavor="melon" onclick="setFlavor('melon')"><span>Melon</span><span class="check">✓</span></div>
             <div class="dropdown-row" data-flavor="citrus" onclick="setFlavor('citrus')"><span>Citrus</span><span class="check">✓</span></div>
+            <div class="dropdown-row unlockable" id="pepperFlavorRow" data-flavor="pepper" onclick="setFlavor('pepper')" style="display:none;"><span>Pepper 🌶️</span><span class="check">✓</span></div>
           </div></div>
           <div class="dropdown-row branch"><span>Patterns</span><span></span><div class="submenu">
             <div class="dropdown-row" data-pattern="none" onclick="setPattern('none')"><span>None</span><span class="check">✓</span></div>
@@ -298,6 +310,7 @@
             <div class="dropdown-row" data-pattern="diagonal" onclick="setPattern('diagonal')"><span>Diagonal</span><span class="check">✓</span></div>
             <div class="dropdown-row" data-pattern="dots" onclick="setPattern('dots')"><span>Dots</span><span class="check">✓</span></div>
             <div class="dropdown-row" data-pattern="chevron" onclick="setPattern('chevron')"><span>Chevron</span><span class="check">✓</span></div>
+            <div class="dropdown-row unlockable" id="wavyPatternRow" data-pattern="wavy" onclick="setPattern('wavy')" style="display:none;"><span>Wavy 〰️</span><span class="check">✓</span></div>
           </div></div>
           <div class="dropdown-row branch"><span>Screen</span><span></span><div class="submenu">
             <div class="dropdown-row" data-screen="standard" onclick="setScreen('standard')"><span>Standard</span><span class="check">✓</span></div>
@@ -306,10 +319,10 @@
           </div></div>
           <div class="dropdown-row branch"><span>Fonts</span><span></span><div class="submenu">
             <div class="dropdown-row" data-font="system" onclick="setFont('system')"><span>System</span><span class="check">✓</span></div>
-            <div class="dropdown-row" data-font="modern" onclick="setFont('modern')"><span>Modern Sans</span><span class="check">✓</span></div>
-            <div class="dropdown-row" data-font="humanist" onclick="setFont('humanist')"><span>Humanist</span><span class="check">✓</span></div>
-            <div class="dropdown-row" data-font="serif" onclick="setFont('serif')"><span>Serif</span><span class="check">✓</span></div>
             <div class="dropdown-row" data-font="mono" onclick="setFont('mono')"><span>Mono</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-font="human" onclick="setFont('human')"><span>Human</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-font="editor" onclick="setFont('editor')"><span>Editor</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-font="serif" onclick="setFont('serif')"><span>Serif</span><span class="check">✓</span></div>
           </div></div>
         </div>
       </div>
@@ -337,12 +350,14 @@
             <button class="tool-btn" onclick="formatText('bold')"><strong>B</strong></button>
             <button class="tool-btn" onclick="formatText('italic')"><em>I</em></button>
             <button class="tool-btn" onclick="formatText('underline')"><u>U</u></button>
+            <div class="mode-row" id="modeRow"></div>
           </div>
-          <div class="mode-row" id="modeRow"></div>
         </div>
       </section>
 
       <aside class="side-panel">
+        <div class="panel-title"><span>Last Action</span></div>
+        <div class="side-section status-section"><div class="last-action" id="lastAction">Ready.</div></div>
         <div class="panel-title"><span>Generated Payload</span></div>
         <div class="side-section output-section"><textarea class="output-box" id="output" readonly placeholder="Generated payload appears here…"></textarea></div>
         <div class="side-section controls-section">
@@ -351,7 +366,6 @@
             <button class="tool-btn" onclick="copyPayload()">Copy</button>
             <button class="tool-btn" onclick="clearPayload()">Clear</button>
           </div>
-          <div class="last-action" id="lastAction"><strong>Last Action</strong><br>Ready.</div>
         </div>
       </aside>
     </div>
@@ -444,6 +458,17 @@ View controls visual-only flavor, pattern, screen width, and font.</div>
     </div>
   </div>
 
+  <div class="modal" id="unlockModal">
+    <div class="modal-card">
+      <div class="modal-title">OK! OK! Here's something new.</div>
+      <div class="modal-copy">Unlocked:
+
+• Flavor: Pepper 🌶️
+• Pattern: Wavy 〰️</div>
+      <div class="modal-actions"><button class="modal-btn" onclick="closeModal('unlockModal')">Nice</button></div>
+    </div>
+  </div>
+
   <script>
     let activeTopMenu = null;
     let topMenuCloseTimer = null;
@@ -462,15 +487,16 @@ View controls visual-only flavor, pattern, screen width, and font.</div>
       cocoa:   { bar:'#372312', bezel:'#56381f', screen:'#24170e', panel:'#1a1009', bg:'#140d08' },
       berry:   { bar:'#16273c', bezel:'#243c5a', screen:'#101b28', panel:'#0a1420', bg:'#09111a' },
       melon:   { bar:'#3b1923', bezel:'#5d2737', screen:'#271119', panel:'#1d0c12', bg:'#17090d' },
-      citrus:  { bar:'#d88b1e', bezel:'#f0a330', screen:'#5b3a08', panel:'#3b2504', bg:'#c96f00' }
+      citrus:  { bar:'#d88b1e', bezel:'#f0a330', screen:'#5b3a08', panel:'#3b2504', bg:'#c96f00' },
+      pepper:  { bar:'#3a0707', bezel:'#641414', screen:'#170202', panel:'#250606', bg:'#0b0000' }
     };
 
     const fontMap = {
       system: '"Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", system-ui, sans-serif',
-      modern: 'Arial, Helvetica, sans-serif',
-      humanist: 'Trebuchet MS, Segoe UI, sans-serif',
-      serif: 'Georgia, Times New Roman, serif',
-      mono: 'Consolas, Monaco, ui-monospace, monospace'
+      mono: 'Consolas, Monaco, ui-monospace, monospace',
+      human: 'Trebuchet MS, Segoe UI, sans-serif',
+      editor: 'Aptos, Calibri, Arial, Helvetica, sans-serif',
+      serif: 'Georgia, Times New Roman, serif'
     };
 
     const intentLibrary = [
@@ -546,7 +572,7 @@ View controls visual-only flavor, pattern, screen width, and font.</div>
     function getActiveIntent() { return getIntent(hotkeys[activeSlot] || 'neutral'); }
     function getVisibleHotkeyCount() { return currentScreen === 'ultra' ? 12 : currentScreen === 'wide' ? 10 : 8; }
 
-    function note(text) { document.getElementById('lastAction').innerHTML = '<strong>Last Action</strong><br>' + escapeHtml(text); }
+    function note(text) { document.getElementById('lastAction').textContent = text; }
     function escapeHtml(str) { return String(str).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
 
     function closeTopMenus() { document.querySelectorAll('.top-dropdown').forEach(el => el.style.display = 'none'); activeTopMenu = null; }
@@ -883,7 +909,7 @@ View controls visual-only flavor, pattern, screen width, and font.</div>
     }
 
     function setFlavor(name) { currentFlavor = name; const f = flavorMap[name] || flavorMap.vanilla; document.documentElement.style.setProperty('--bar', f.bar); document.documentElement.style.setProperty('--bezel', f.bezel); document.documentElement.style.setProperty('--screen', f.screen); document.documentElement.style.setProperty('--panel', f.panel); document.documentElement.style.setProperty('--bg', f.bg); updateChecks(); }
-    function setPattern(name) { currentPattern = name; document.body.classList.remove('pattern-horizontal','pattern-vertical','pattern-diagonal','pattern-dots','pattern-chevron'); if (name !== 'none') document.body.classList.add(`pattern-${name}`); updateChecks(); }
+    function setPattern(name) { currentPattern = name; document.body.classList.remove('pattern-horizontal','pattern-vertical','pattern-diagonal','pattern-dots','pattern-chevron','pattern-wavy'); if (name !== 'none') document.body.classList.add(`pattern-${name}`); updateChecks(); }
     function setScreen(name) {
       currentScreen = name;
       const bezel = document.getElementById('bezel');
@@ -922,8 +948,69 @@ View controls visual-only flavor, pattern, screen width, and font.</div>
     function loadDefaults() { loadDefaultHotkeys(true); }
     function startFresh() { startFreshHotkeys(true); }
 
-    document.getElementById('sigil').addEventListener('click', e => { e.stopPropagation(); openInfoModal(); });
+    let audioCtx = null;
+    function ensureAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    function playThoughtBubbleSound() {
+      ensureAudio();
+      const now = audioCtx.currentTime;
+      const duration = 0.181;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(273, now + 0.001);
+      osc.frequency.exponentialRampToValueAtTime(749, now + duration);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.0455, now + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now + 0.001);
+      osc.stop(now + duration + 0.02);
+      osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+    }
 
+    const sigilSayings = [
+      'Subtext preserved.', 'Meaning layer stable.', 'The words are not the whole message.',
+      'Tone is doing quiet work.', 'Intent marker acknowledged.', 'Plain text, complicated feelings.',
+      'Subtextual thought bubble ping.', 'Context tucked under the sentence.', 'Semantic residue detected.',
+      'Your cursor has opinions.', 'The text knows what it meant.', 'A tiny bubble of implication.',
+      'That sentence has luggage.', 'The margins are thinking.', 'No extra modal. Just vibes.',
+      'Hidden layer still hidden.', 'Meaning successfully side-eyed.', 'The payload remains calm.',
+      'A soft click for a hard-to-read tone.', 'Subtext is a second shadow.', 'Words are surface weather.',
+      'Intent drift: pleasantly mild.', 'Reader interpretation pending.', 'The bubble approves.',
+      'Some meanings prefer the basement.'
+    ];
+
+    function refreshUnlocks() {
+      const unlocked = localStorage.getItem('subtextual_spice_unlocked') === '1';
+      const pepper = document.getElementById('pepperFlavorRow');
+      const wavy = document.getElementById('wavyPatternRow');
+      if (pepper) pepper.style.display = unlocked ? 'flex' : 'none';
+      if (wavy) wavy.style.display = unlocked ? 'flex' : 'none';
+      updateChecks();
+    }
+
+    function unlockSpice() {
+      localStorage.setItem('subtextual_spice_unlocked', '1');
+      refreshUnlocks();
+      openModal('unlockModal');
+      note('Pepper flavor and Wavy pattern unlocked.');
+    }
+
+    document.getElementById('sigil').addEventListener('click', e => {
+      e.stopPropagation();
+      playThoughtBubbleSound();
+      const count = Number(localStorage.getItem('subtextual_sigil_clicks') || '0') + 1;
+      localStorage.setItem('subtextual_sigil_clicks', String(count));
+      if (count === 33) { note("That's a lot of clicks."); return; }
+      if (count === 66) { note('Maybe you are onto something?'); return; }
+      if (count === 99) { unlockSpice(); return; }
+      note(sigilSayings[(count - 1) % sigilSayings.length]);
+    });
+
+    refreshUnlocks();
     setFlavor('vanilla');
     setPattern('none');
     setScreen('standard');
