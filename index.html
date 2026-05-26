@@ -3,7 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Subtextual</title>
+  <title>Subtextual — Text With Intent</title>
+  <meta name="description" content="Subtextual is a browser-based semantic writing editor for marking the intent, tone, and subtext behind plain text." />
+  <meta name="application-name" content="Subtextual" />
+  <meta name="theme-color" content="#111111" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://subtextual.xyz/" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23111111'/%3E%3Ctext x='32' y='43' text-anchor='middle' font-size='38'%3E%F0%9F%92%AD%3C/text%3E%3C/svg%3E" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Subtextual" />
+  <meta property="og:title" content="Subtextual — Text With Intent" />
+  <meta property="og:description" content="A semantic writing surface for marking intent, tone, and subtext while keeping exports clean and portable." />
+  <meta property="og:url" content="https://subtextual.xyz/" />
+  <meta property="og:image" content="https://subtextual.xyz/social-preview.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Subtextual — Text With Intent" />
+  <meta name="twitter:description" content="Write the words. Mark the intent. Export the meaning layer." />
+  <meta name="twitter:image" content="https://subtextual.xyz/social-preview.png" />
   <style>
     :root {
       --bg: #000000;
@@ -301,7 +318,7 @@
             <div class="dropdown-row" data-flavor="berry" onclick="setFlavor('berry')"><span>Berry</span><span class="check">✓</span></div>
             <div class="dropdown-row" data-flavor="melon" onclick="setFlavor('melon')"><span>Melon</span><span class="check">✓</span></div>
             <div class="dropdown-row" data-flavor="citrus" onclick="setFlavor('citrus')"><span>Citrus</span><span class="check">✓</span></div>
-            <div class="dropdown-row unlockable" id="pepperFlavorRow" data-flavor="pepper" onclick="setFlavor('pepper')" style="display:none;"><span>Pepper 🌶️</span><span class="check">✓</span></div>
+            <div class="dropdown-row unlockable" id="pepperFlavorRow" data-flavor="pepper" onclick="setFlavor('pepper')" style="display:none;"><span>Pepper</span><span class="check">✓</span></div>
           </div></div>
           <div class="dropdown-row branch"><span>Patterns</span><span></span><div class="submenu">
             <div class="dropdown-row" data-pattern="none" onclick="setPattern('none')"><span>None</span><span class="check">✓</span></div>
@@ -310,7 +327,7 @@
             <div class="dropdown-row" data-pattern="diagonal" onclick="setPattern('diagonal')"><span>Diagonal</span><span class="check">✓</span></div>
             <div class="dropdown-row" data-pattern="dots" onclick="setPattern('dots')"><span>Dots</span><span class="check">✓</span></div>
             <div class="dropdown-row" data-pattern="chevron" onclick="setPattern('chevron')"><span>Chevron</span><span class="check">✓</span></div>
-            <div class="dropdown-row unlockable" id="wavyPatternRow" data-pattern="wavy" onclick="setPattern('wavy')" style="display:none;"><span>Wavy 〰️</span><span class="check">✓</span></div>
+            <div class="dropdown-row unlockable" id="wavyPatternRow" data-pattern="wavy" onclick="setPattern('wavy')" style="display:none;"><span>Wavy</span><span class="check">✓</span></div>
           </div></div>
           <div class="dropdown-row branch"><span>Screen</span><span></span><div class="submenu">
             <div class="dropdown-row" data-screen="standard" onclick="setScreen('standard')"><span>Standard</span><span class="check">✓</span></div>
@@ -376,9 +393,9 @@
   <div class="modal open" id="initModal">
     <div class="modal-card">
       <div class="modal-title">Welcome to Subtextual</div>
-      <div class="modal-copy">Subtextual is a writing surface for marking the intent behind your words. Use F1–F8 to switch between intent modes while typing. Wider screen modes reveal F9–F12.
+      <div class="modal-copy">Subtextual is a semantic writing surface for marking the intent behind your words. Assign intents to the function-key row, switch modes while typing, and export the finished text with a clean intent map.
 
-Colors are visual guides. The export saves the underlying intent map, not font or theme choices.</div>
+Load Defaults starts with a practical set of intent keys. Start Fresh begins with neutral keys so you can build your own setup. Colors, fonts, flavors, and patterns are visual guides only.</div>
       <div class="modal-actions">
         <button class="modal-btn secondary" onclick="startFresh()">Start Fresh</button>
         <button class="modal-btn" onclick="loadDefaults()">Load Defaults</button>
@@ -407,9 +424,13 @@ Reset Everything returns this session to the startup choice you selected.</div>
       <div class="modal-title">About Subtextual</div>
       <div class="modal-copy">Subtextual
 
-A semantic writing editor for plain text with visible intent markers.
+Text with intent.
 
-About links, credits, and social information can live here later.</div>
+Subtextual is a browser-based semantic writing editor for plain text, prompt drafting, scene notes, dialogue fragments, and any writing where the meaning underneath the words matters.
+
+Created by Vibe Labs.
+Website: subtextual.xyz
+Social links, credits, and contact info can live here later.</div>
       <div class="modal-actions"><button class="modal-btn" onclick="closeModal('aboutModal')">Close</button></div>
     </div>
   </div>
@@ -417,17 +438,23 @@ About links, credits, and social information can live here later.</div>
   <div class="modal" id="infoModal">
     <div class="modal-card">
       <div class="modal-title">Info</div>
-      <div class="modal-copy">Use the function-key row to assign intents and switch active writing mode.
+      <div class="modal-copy">Function keys
+Use F1 through F8 to switch intent while writing. Wide screen mode reveals F9 and F10. Ultrawide reveals F11 and F12. Each slot has an assignable intent and a fixed visual color.
 
-File > Save stores a Subtextual project file.
-File > Save As exports pure plain text.
-File > Reset lets you clear writing only or reset the session.
+Writing surface
+Type normally in the main editor. The active intent colors new text as you write. B, I, and U apply basic visual formatting. The semantic export cares about text and intent, not fonts or themes.
 
-Mode > Freeform keeps the editor simple.
-Mode > Prompt reveals five prompt shortcut buttons.
-Mode > Scene reveals five editable scene shortcut buttons.
+File
+Open loads a saved Subtextual project. Save stores the current project with text, intent spans, key assignments, mode, shortcuts, and view settings. Save As exports plain text only. Reset lets you choose Writing Only or Reset Everything.
 
-View controls visual-only flavor, pattern, screen width, and font.</div>
+Mode
+Freeform keeps only the editor and intent keys. Prompt adds five prompt-building shortcut buttons plus Setup. Scene adds five user-defined shortcut buttons plus Setup.
+
+View
+Flavors change the app color theme. Patterns change the background. Screen changes the page width and how many function keys are visible. Fonts change the editor font only.
+
+Output
+Generate builds the semantic payload from the current writing surface. Copy places that payload on your clipboard. Clear empties the generated payload box without changing the writing surface.</div>
       <div class="modal-actions"><button class="modal-btn" onclick="closeModal('infoModal')">Close</button></div>
     </div>
   </div>
@@ -435,7 +462,7 @@ View controls visual-only flavor, pattern, screen width, and font.</div>
   <div class="modal" id="promptSetupModal">
     <div class="modal-card wide">
       <div class="modal-title">Prompt Shortcuts</div>
-      <div class="modal-copy">Choose up to five prompt labels. These affect shortcut buttons only.</div>
+      <div class="modal-copy">Choose up to five prompt labels for the shortcut row. These buttons insert reusable prompt headings at the cursor; they do not change the semantic payload by themselves.</div>
       <div class="setup-grid" id="promptChoices"></div>
       <div class="setup-field"><label>Custom 1</label><input id="promptCustom1" placeholder="Optional custom label" /></div>
       <div class="setup-field"><label>Custom 2</label><input id="promptCustom2" placeholder="Optional custom label" /></div>
@@ -449,7 +476,7 @@ View controls visual-only flavor, pattern, screen width, and font.</div>
   <div class="modal" id="sceneSetupModal">
     <div class="modal-card">
       <div class="modal-title">Scene Shortcuts</div>
-      <div class="modal-copy">Define the five scene buttons. These insert plain labels at the caret.</div>
+      <div class="modal-copy">Define the five scene shortcut buttons. Use them for characters, places, objects, speakers, recurring references, or any labels you type often.</div>
       <div id="sceneFields"></div>
       <div class="modal-actions">
         <button class="modal-btn secondary" onclick="closeModal('sceneSetupModal')">Cancel</button>
@@ -463,8 +490,10 @@ View controls visual-only flavor, pattern, screen width, and font.</div>
       <div class="modal-title">OK! OK! Here's something new.</div>
       <div class="modal-copy">Unlocked:
 
-• Flavor: Pepper 🌶️
-• Pattern: Wavy 〰️</div>
+• Flavor: Pepper
+• Pattern: Wavy
+
+These are now available from the View menu.</div>
       <div class="modal-actions"><button class="modal-btn" onclick="closeModal('unlockModal')">Nice</button></div>
     </div>
   </div>
@@ -488,7 +517,7 @@ View controls visual-only flavor, pattern, screen width, and font.</div>
       berry:   { bar:'#16273c', bezel:'#243c5a', screen:'#101b28', panel:'#0a1420', bg:'#09111a' },
       melon:   { bar:'#3b1923', bezel:'#5d2737', screen:'#271119', panel:'#1d0c12', bg:'#17090d' },
       citrus:  { bar:'#d88b1e', bezel:'#f0a330', screen:'#5b3a08', panel:'#3b2504', bg:'#c96f00' },
-      pepper:  { bar:'#3a0707', bezel:'#641414', screen:'#170202', panel:'#250606', bg:'#0b0000' }
+      pepper:  { bar:'#7a1616', bezel:'#a72b2b', screen:'#240404', panel:'#3a0909', bg:'#120000' }
     };
 
     const fontMap = {
