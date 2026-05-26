@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subtextual</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --bar: #111111;
+      --bezel: #1a1a1a;
+      --screen: #000000;
+      --panel: #0b0b0b;
+      --text: #ffffff;
+      --muted: #b7b7b7;
+      --border: #333333;
+      --hover: #222222;
+      --active-intent: #ffffff;
+      --hotkey-count: 8;
+      --editor-font: "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", system-ui, sans-serif;
+      --editor-font-size: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    body.pattern-horizontal { background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0px, rgba(255,255,255,.05) 1px, transparent 1px, transparent 8px); }
+    body.pattern-vertical { background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0px, rgba(255,255,255,.05) 1px, transparent 1px, transparent 8px); }
+    body.pattern-diagonal { background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0px, rgba(255,255,255,.05) 1px, transparent 1px, transparent 10px); }
+    body.pattern-dots { background-image: radial-gradient(circle, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 14px 14px; }
+    body.pattern-chevron {
+      background-image:
+        linear-gradient(135deg, rgba(255,255,255,.04) 25%, transparent 25%),
+        linear-gradient(225deg, rgba(255,255,255,.04) 25%, transparent 25%);
+      background-size: 18px 18px;
+      background-position: 0 0, 9px 9px;
+    }
+
+    .bezel {
+      width: 1000px;
+      max-width: 96vw;
+      height: 88vh;
+      margin-top: 2vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bezel);
+      border: 2px solid var(--border);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.03), 0 20px 70px rgba(0,0,0,.45);
+    }
+    .bezel.wide { width: 1180px; }
+    .bezel.ultra { width: 96vw; }
+
+    .menu-bar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 6px 10px;
+      background: var(--bar);
+      border-bottom: 1px solid var(--border);
+      user-select: none;
+      flex: 0 0 auto;
+    }
+    .menu-item { position: relative; cursor: pointer; padding: 2px 0; }
+    .menu-label { display: block; }
+    .system-label { margin-left: auto; font-weight: 800; letter-spacing: .04em; user-select: none; }
+    #sigil { margin-left: 2px; padding: 0; border: none; background: transparent; color: var(--text); font: inherit; line-height: 1; cursor: pointer; user-select: none; appearance: none; }
+    #sigil:focus { outline: none; }
+
+    .top-dropdown, .submenu {
+      position: absolute;
+      min-width: 210px;
+      display: none;
+      flex-direction: column;
+      background: var(--screen);
+      border: 1px solid var(--border);
+      z-index: 100;
+    }
+    .top-dropdown { top: 24px; left: 0; }
+    .submenu { top: -1px; left: 100%; }
+    .dropdown-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      white-space: nowrap;
+      color: var(--text);
+    }
+    .dropdown-row:hover { background: var(--hover); }
+    .dropdown-row.branch:hover > .submenu { display: flex; }
+    .check { opacity: 0; margin-left: 14px; flex: 0 0 auto; }
+    .check.visible { opacity: 1; }
+
+    .hotkey-strip {
+      display: grid;
+      grid-template-columns: repeat(var(--hotkey-count), minmax(0, 1fr));
+      gap: 5px;
+      padding: 8px 10px;
+      background: var(--screen);
+      border-bottom: 1px solid var(--border);
+      flex: 0 0 auto;
+      overflow: hidden;
+    }
+    .hotkey-card { border: 1px solid var(--border); background: rgba(255,255,255,.025); min-width: 0; padding: 5px; overflow: hidden; }
+    .hotkey-card.active { box-shadow: inset 0 0 0 1px var(--active-intent), 0 0 10px rgba(255,255,255,.08); }
+    .hotkey-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 5px; }
+    .hotkey-key { font-weight: 800; font-size: 12px; letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .intent-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--intent-color, #fff); border: 1px solid rgba(255,255,255,.45); flex: 0 0 auto; }
+    .intent-select { width: 100%; min-width: 0; background: #111; color: var(--text); border: 1px solid var(--border); padding: 4px 2px; font: inherit; font-size: 12px; outline: none; }
+
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 10px;
+      padding: 10px;
+      background: var(--screen);
+    }
+    .editor-shell, .side-panel {
+      min-height: 0;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-title {
+      padding: 8px 10px;
+      background: rgba(255,255,255,.04);
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+    .active-pill { color: #000; background: var(--active-intent); border: 1px solid rgba(255,255,255,.35); padding: 2px 6px; font-size: 12px; font-weight: 800; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .editor {
+      flex: 1;
+      min-height: 0;
+      padding: 18px;
+      color: var(--text);
+      background: #050505;
+      font-family: var(--editor-font);
+      font-size: var(--editor-font-size);
+      line-height: 1.55;
+      overflow-y: auto;
+      outline: none;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      caret-color: var(--active-intent);
+    }
+    .editor:empty::before { content: "Start writing. Use the function keys to change intent while typing…"; color: var(--muted); }
+    .editor span[data-intent] { border-bottom: 1px dotted rgba(255,255,255,.18); }
+
+    .editor-tools {
+      border-top: 1px solid var(--border);
+      background: rgba(255,255,255,.015);
+      flex: 0 0 auto;
+    }
+    .format-row, .mode-row {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      overflow: hidden;
+    }
+    .mode-row { border-top: 1px solid rgba(255,255,255,.08); display: none; }
+    .mode-row.open { display: flex; }
+    .tool-btn {
+      border: 1px solid var(--border);
+      background: #efefef;
+      color: #000;
+      font: inherit;
+      font-size: 13px;
+      padding: 5px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tool-btn.dark { background: #111; color: var(--text); }
+    .tool-btn.shortcut { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .tool-btn.setup { flex: 0 0 74px; }
+    .tool-btn:active { transform: translateY(1px); }
+
+    .side-panel { gap: 0; }
+    .side-section { padding: 10px; border-bottom: 1px solid var(--border); }
+    .side-section.output-section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .side-section.controls-section { border-bottom: none; flex: 0 0 auto; }
+    .output-box {
+      flex: 1;
+      min-height: 170px;
+      width: 100%;
+      resize: none;
+      background: #050505;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px;
+      font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      line-height: 1.4;
+      outline: none;
+    }
+    .side-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .side-grid .tool-btn { width: 100%; min-height: 34px; }
+    .last-action {
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      background: #050505;
+      min-height: 46px;
+      padding: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .last-action strong { color: var(--text); }
+
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.75); z-index: 500; }
+    .modal.open { display: flex; }
+    .modal-card { width: 500px; max-width: 92vw; max-height: 90vh; overflow: auto; background: var(--screen); color: var(--text); border: 1px solid var(--border); padding: 16px; box-shadow: 0 18px 80px rgba(0,0,0,.6); }
+    .modal-card.wide { width: 620px; }
+    .modal-title { font-weight: 800; margin-bottom: 12px; letter-spacing: .02em; }
+    .modal-copy { color: var(--muted); line-height: 1.45; margin-bottom: 12px; white-space: pre-wrap; }
+    .modal-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+    .modal-btn { min-width: 112px; padding: 8px 12px; border: 1px solid var(--border); background: #efefef; color: #000; font: inherit; cursor: pointer; }
+    .modal-btn.secondary { background: #111; color: var(--text); }
+    .setup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 10px 0; }
+    .setup-check { display: flex; align-items: center; gap: 7px; color: var(--text); border: 1px solid var(--border); padding: 7px; background: rgba(255,255,255,.025); }
+    .setup-field { display: grid; gap: 4px; margin: 8px 0; }
+    .setup-field label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .setup-field input { width: 100%; background: #111; color: var(--text); border: 1px solid var(--border); padding: 8px; font: inherit; }
+    .hidden-file { display: none; }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .bezel { height: auto; min-height: 96vh; margin-top: 0; max-width: 100vw; }
+      .hotkey-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .workspace { grid-template-columns: 1fr; }
+      .side-panel { min-height: 300px; }
+      .mode-row { flex-wrap: wrap; }
+      .tool-btn.shortcut { flex-basis: 30%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bezel" id="bezel">
+    <div class="menu-bar">
+      <div class="menu-item" onclick="toggleTopMenu(event, 'fileMenu')" onmouseenter="hoverTopMenu('fileMenu')" onmouseleave="queueCloseMenus()">
+        <span class="menu-label">File</span>
+        <div class="top-dropdown" id="fileMenu">
+          <div class="dropdown-row" onclick="triggerOpenFile()">Open</div>
+          <div class="dropdown-row" onclick="saveSubtextualFile()">Save</div>
+          <div class="dropdown-row" onclick="savePlainText()">Save As</div>
+          <div class="dropdown-row" onclick="openResetModal()">Reset</div>
+        </div>
+      </div>
+
+      <div class="menu-item" onclick="toggleTopMenu(event, 'modeMenu')" onmouseenter="hoverTopMenu('modeMenu')" onmouseleave="queueCloseMenus()">
+        <span class="menu-label">Mode</span>
+        <div class="top-dropdown" id="modeMenu">
+          <div class="dropdown-row" data-mode="freeform" onclick="setMode('freeform')"><span>Freeform</span><span class="check">✓</span></div>
+          <div class="dropdown-row" data-mode="prompt" onclick="setMode('prompt')"><span>Prompt</span><span class="check">✓</span></div>
+          <div class="dropdown-row" data-mode="scene" onclick="setMode('scene')"><span>Scene</span><span class="check">✓</span></div>
+        </div>
+      </div>
+
+      <div class="menu-item" onclick="toggleTopMenu(event, 'viewMenu')" onmouseenter="hoverTopMenu('viewMenu')" onmouseleave="queueCloseMenus()">
+        <span class="menu-label">View</span>
+        <div class="top-dropdown" id="viewMenu">
+          <div class="dropdown-row branch"><span>Flavors</span><span></span><div class="submenu">
+            <div class="dropdown-row" data-flavor="vanilla" onclick="setFlavor('vanilla')"><span>Vanilla</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-flavor="mint" onclick="setFlavor('mint')"><span>Mint</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-flavor="cocoa" onclick="setFlavor('cocoa')"><span>Cocoa</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-flavor="berry" onclick="setFlavor('berry')"><span>Berry</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-flavor="melon" onclick="setFlavor('melon')"><span>Melon</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-flavor="citrus" onclick="setFlavor('citrus')"><span>Citrus</span><span class="check">✓</span></div>
+          </div></div>
+          <div class="dropdown-row branch"><span>Patterns</span><span></span><div class="submenu">
+            <div class="dropdown-row" data-pattern="none" onclick="setPattern('none')"><span>None</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-pattern="horizontal" onclick="setPattern('horizontal')"><span>Horizontal</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-pattern="vertical" onclick="setPattern('vertical')"><span>Vertical</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-pattern="diagonal" onclick="setPattern('diagonal')"><span>Diagonal</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-pattern="dots" onclick="setPattern('dots')"><span>Dots</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-pattern="chevron" onclick="setPattern('chevron')"><span>Chevron</span><span class="check">✓</span></div>
+          </div></div>
+          <div class="dropdown-row branch"><span>Screen</span><span></span><div class="submenu">
+            <div class="dropdown-row" data-screen="standard" onclick="setScreen('standard')"><span>Standard</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-screen="wide" onclick="setScreen('wide')"><span>Wide</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-screen="ultra" onclick="setScreen('ultra')"><span>Ultrawide</span><span class="check">✓</span></div>
+          </div></div>
+          <div class="dropdown-row branch"><span>Fonts</span><span></span><div class="submenu">
+            <div class="dropdown-row" data-font="system" onclick="setFont('system')"><span>System</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-font="modern" onclick="setFont('modern')"><span>Modern Sans</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-font="humanist" onclick="setFont('humanist')"><span>Humanist</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-font="serif" onclick="setFont('serif')"><span>Serif</span><span class="check">✓</span></div>
+            <div class="dropdown-row" data-font="mono" onclick="setFont('mono')"><span>Mono</span><span class="check">✓</span></div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="menu-item" onclick="toggleTopMenu(event, 'helpMenu')" onmouseenter="hoverTopMenu('helpMenu')" onmouseleave="queueCloseMenus()">
+        <span class="menu-label">Help</span>
+        <div class="top-dropdown" id="helpMenu">
+          <div class="dropdown-row" onclick="openAboutModal()">About</div>
+          <div class="dropdown-row" onclick="openInfoModal()">Info</div>
+        </div>
+      </div>
+
+      <div class="system-label">Subtextual</div>
+      <button id="sigil" aria-label="subtextual sigil" title="Subtextual">💭</button>
+    </div>
+
+    <div class="hotkey-strip" id="hotkeyStrip"></div>
+
+    <div class="workspace">
+      <section class="editor-shell">
+        <div class="panel-title"><span id="surfaceTitle">Writing Surface</span><span class="active-pill" id="activePill">F1 · Neutral</span></div>
+        <div id="editor" class="editor" contenteditable="true" spellcheck="true"></div>
+        <div class="editor-tools">
+          <div class="format-row">
+            <button class="tool-btn" onclick="formatText('bold')"><strong>B</strong></button>
+            <button class="tool-btn" onclick="formatText('italic')"><em>I</em></button>
+            <button class="tool-btn" onclick="formatText('underline')"><u>U</u></button>
+          </div>
+          <div class="mode-row" id="modeRow"></div>
+        </div>
+      </section>
+
+      <aside class="side-panel">
+        <div class="panel-title"><span>Generated Payload</span></div>
+        <div class="side-section output-section"><textarea class="output-box" id="output" readonly placeholder="Generated payload appears here…"></textarea></div>
+        <div class="side-section controls-section">
+          <div class="side-grid">
+            <button class="tool-btn" onclick="generatePayload()">Generate</button>
+            <button class="tool-btn" onclick="copyPayload()">Copy</button>
+            <button class="tool-btn" onclick="clearPayload()">Clear</button>
+          </div>
+          <div class="last-action" id="lastAction"><strong>Last Action</strong><br>Ready.</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <input class="hidden-file" type="file" id="openFileInput" accept=".json,.txt,.subtextual" />
+
+  <div class="modal open" id="initModal">
+    <div class="modal-card">
+      <div class="modal-title">Welcome to Subtextual</div>
+      <div class="modal-copy">Subtextual is a writing surface for marking the intent behind your words. Use F1–F8 to switch between intent modes while typing. Wider screen modes reveal F9–F12.
+
+Colors are visual guides. The export saves the underlying intent map, not font or theme choices.</div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="startFresh()">Start Fresh</button>
+        <button class="modal-btn" onclick="loadDefaults()">Load Defaults</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="resetModal">
+    <div class="modal-card">
+      <div class="modal-title">Reset Subtextual</div>
+      <div class="modal-copy">Choose how much to reset.
+
+Writing Only removes editor text and generated output. Your current keys, mode, view, and shortcut setup stay in place.
+
+Reset Everything returns this session to the startup choice you selected.</div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('resetModal')">Cancel</button>
+        <button class="modal-btn" onclick="resetWritingOnly()">Writing Only</button>
+        <button class="modal-btn" onclick="resetEverything()">Reset Everything</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="aboutModal">
+    <div class="modal-card">
+      <div class="modal-title">About Subtextual</div>
+      <div class="modal-copy">Subtextual
+
+A semantic writing editor for plain text with visible intent markers.
+
+About links, credits, and social information can live here later.</div>
+      <div class="modal-actions"><button class="modal-btn" onclick="closeModal('aboutModal')">Close</button></div>
+    </div>
+  </div>
+
+  <div class="modal" id="infoModal">
+    <div class="modal-card">
+      <div class="modal-title">Info</div>
+      <div class="modal-copy">Use the function-key row to assign intents and switch active writing mode.
+
+File > Save stores a Subtextual project file.
+File > Save As exports pure plain text.
+File > Reset lets you clear writing only or reset the session.
+
+Mode > Freeform keeps the editor simple.
+Mode > Prompt reveals five prompt shortcut buttons.
+Mode > Scene reveals five editable scene shortcut buttons.
+
+View controls visual-only flavor, pattern, screen width, and font.</div>
+      <div class="modal-actions"><button class="modal-btn" onclick="closeModal('infoModal')">Close</button></div>
+    </div>
+  </div>
+
+  <div class="modal" id="promptSetupModal">
+    <div class="modal-card wide">
+      <div class="modal-title">Prompt Shortcuts</div>
+      <div class="modal-copy">Choose up to five prompt labels. These affect shortcut buttons only.</div>
+      <div class="setup-grid" id="promptChoices"></div>
+      <div class="setup-field"><label>Custom 1</label><input id="promptCustom1" placeholder="Optional custom label" /></div>
+      <div class="setup-field"><label>Custom 2</label><input id="promptCustom2" placeholder="Optional custom label" /></div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('promptSetupModal')">Cancel</button>
+        <button class="modal-btn" onclick="savePromptSetup()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="sceneSetupModal">
+    <div class="modal-card">
+      <div class="modal-title">Scene Shortcuts</div>
+      <div class="modal-copy">Define the five scene buttons. These insert plain labels at the caret.</div>
+      <div id="sceneFields"></div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal('sceneSetupModal')">Cancel</button>
+        <button class="modal-btn" onclick="saveSceneSetup()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeTopMenu = null;
+    let topMenuCloseTimer = null;
+    let startupMode = 'defaults';
+    let currentFlavor = 'vanilla';
+    let currentPattern = 'none';
+    let currentScreen = 'standard';
+    let currentFont = 'system';
+    let currentMode = 'freeform';
+    let activeSlot = 0;
+    let savedRange = null;
+
+    const flavorMap = {
+      vanilla: { bar:'#111111', bezel:'#1a1a1a', screen:'#000000', panel:'#0b0b0b', bg:'#000000' },
+      mint:    { bar:'#103225', bezel:'#1b4d39', screen:'#10241c', panel:'#0b1c15', bg:'#08150f' },
+      cocoa:   { bar:'#372312', bezel:'#56381f', screen:'#24170e', panel:'#1a1009', bg:'#140d08' },
+      berry:   { bar:'#16273c', bezel:'#243c5a', screen:'#101b28', panel:'#0a1420', bg:'#09111a' },
+      melon:   { bar:'#3b1923', bezel:'#5d2737', screen:'#271119', panel:'#1d0c12', bg:'#17090d' },
+      citrus:  { bar:'#d88b1e', bezel:'#f0a330', screen:'#5b3a08', panel:'#3b2504', bg:'#c96f00' }
+    };
+
+    const fontMap = {
+      system: '"Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", system-ui, sans-serif',
+      modern: 'Arial, Helvetica, sans-serif',
+      humanist: 'Trebuchet MS, Segoe UI, sans-serif',
+      serif: 'Georgia, Times New Roman, serif',
+      mono: 'Consolas, Monaco, ui-monospace, monospace'
+    };
+
+    const intentLibrary = [
+      { id:'neutral', label:'Neutral', color:'#ffffff' },
+      { id:'plain_factual', label:'Plain Factual', color:'#d0d0d0' },
+      { id:'formal', label:'Formal', color:'#00bcd4' },
+      { id:'casual', label:'Casual', color:'#8bc34a' },
+      { id:'instructional', label:'Instructional', color:'#2196f3' },
+      { id:'quoted_voice', label:'Quoted Voice', color:'#9e9e9e' },
+      { id:'warm', label:'Warm', color:'#ffb347' },
+      { id:'friendly', label:'Friendly', color:'#2ecc71' },
+      { id:'sincere', label:'Sincere', color:'#66ffcc' },
+      { id:'encouraging', label:'Encouraging', color:'#cddc39' },
+      { id:'grateful', label:'Grateful', color:'#ffd54f' },
+      { id:'excited', label:'Excited', color:'#ff6d00' },
+      { id:'playful', label:'Playful', color:'#ff4fa3' },
+      { id:'reassuring', label:'Reassuring', color:'#64b5f6' },
+      { id:'angry', label:'Angry', color:'#f44336' },
+      { id:'frustrated', label:'Frustrated', color:'#e85d04' },
+      { id:'annoyed', label:'Annoyed', color:'#ff9800' },
+      { id:'disappointed', label:'Disappointed', color:'#6d8bb3' },
+      { id:'sad', label:'Sad', color:'#3f6ee8' },
+      { id:'hurt', label:'Hurt', color:'#8e5bd5' },
+      { id:'vulnerable', label:'Vulnerable', color:'#d8a7ca' },
+      { id:'worried', label:'Worried', color:'#ffcc00' },
+      { id:'afraid', label:'Afraid', color:'#7cb342' },
+      { id:'urgent', label:'Urgent', color:'#ffea00' },
+      { id:'sarcastic', label:'Sarcastic', color:'#9c27b0' },
+      { id:'ironic', label:'Ironic', color:'#00acc1' },
+      { id:'dry', label:'Dry', color:'#607d8b' },
+      { id:'deadpan', label:'Deadpan', color:'#90a4ae' },
+      { id:'masked', label:'Masked', color:'#8d6e63' },
+      { id:'performative', label:'Performative', color:'#f06292' },
+      { id:'teasing', label:'Teasing', color:'#ff7043' },
+      { id:'bitter', label:'Bitter', color:'#a1882b' },
+      { id:'mocking', label:'Mocking', color:'#c2185b' },
+      { id:'defensive', label:'Defensive', color:'#795548' },
+      { id:'passive_aggressive', label:'Passive-Aggressive', color:'#b8860b' },
+      { id:'uncertain', label:'Uncertain', color:'#f4d35e' },
+      { id:'hedging', label:'Hedging', color:'#d4c45c' },
+      { id:'speculative', label:'Speculative', color:'#4fc3f7' },
+      { id:'confident', label:'Confident', color:'#00e676' },
+      { id:'doubtful', label:'Doubtful', color:'#5c93ff' },
+      { id:'skeptical', label:'Skeptical', color:'#7e57c2' },
+      { id:'corrective', label:'Corrective', color:'#ff5252' },
+      { id:'clarifying', label:'Clarifying', color:'#00c853' },
+      { id:'emphasis', label:'Emphasis', color:'#ffdd00' },
+      { id:'warning', label:'Warning', color:'#ff5722' },
+      { id:'caution', label:'Caution', color:'#ffc107' },
+      { id:'sensitive', label:'Sensitive', color:'#d8a48f' },
+      { id:'private', label:'Private', color:'#673ab7' },
+      { id:'aside', label:'Aside', color:'#20b2aa' },
+      { id:'punchline', label:'Punchline', color:'#ff4081' },
+      { id:'softened', label:'Softened', color:'#a7c7e7' },
+      { id:'resigned', label:'Resigned', color:'#708090' },
+      { id:'commanding', label:'Commanding', color:'#1565c0' },
+      { id:'apologetic', label:'Apologetic', color:'#bcaaa4' }
+    ];
+
+    const defaultHotkeyIds = ['neutral','warm','formal','sarcastic','dry','frustrated','uncertain','emphasis','warning','playful','confident','softened'];
+    let hotkeys = defaultHotkeyIds.slice();
+
+    const promptBank = ['Subject:', 'Setting:', 'Action:', 'Style:', 'Mood:', 'Constraints:', 'Format:', 'Audience:', 'Tone:', 'Lighting:', 'Camera:', 'Voice:', 'Length:', 'Negative:', 'Reference:', 'Context:', 'Task:', 'Output:', 'Rules:', 'Notes:'];
+    let promptSlots = ['Subject:', 'Setting:', 'Action:', 'Style:', 'Mood:'];
+    let sceneSlots = ['Character 1', 'Character 2', 'Place 1', 'Thing 1', 'Thing 2'];
+
+    const editor = document.getElementById('editor');
+    const output = document.getElementById('output');
+    const openFileInput = document.getElementById('openFileInput');
+    const modeRow = document.getElementById('modeRow');
+
+    function getIntent(id) { return intentLibrary.find(i => i.id === id) || intentLibrary[0]; }
+    function getActiveIntent() { return getIntent(hotkeys[activeSlot] || 'neutral'); }
+    function getVisibleHotkeyCount() { return currentScreen === 'ultra' ? 12 : currentScreen === 'wide' ? 10 : 8; }
+
+    function note(text) { document.getElementById('lastAction').innerHTML = '<strong>Last Action</strong><br>' + escapeHtml(text); }
+    function escapeHtml(str) { return String(str).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+
+    function closeTopMenus() { document.querySelectorAll('.top-dropdown').forEach(el => el.style.display = 'none'); activeTopMenu = null; }
+    function queueCloseMenus() { clearTimeout(topMenuCloseTimer); topMenuCloseTimer = setTimeout(() => closeTopMenus(), 120); }
+    function cancelCloseMenus() { clearTimeout(topMenuCloseTimer); }
+    function openTopMenu(id) { closeTopMenus(); const el = document.getElementById(id); if (el) { el.style.display = 'flex'; activeTopMenu = id; } }
+    function toggleTopMenu(event, id) { event.stopPropagation(); cancelCloseMenus(); activeTopMenu === id ? closeTopMenus() : openTopMenu(id); }
+    function hoverTopMenu(id) { cancelCloseMenus(); if (activeTopMenu && activeTopMenu !== id) openTopMenu(id); }
+    document.addEventListener('click', e => { if (!e.target.closest('.menu-bar')) closeTopMenus(); });
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function openAboutModal() { closeTopMenus(); openModal('aboutModal'); }
+    function openInfoModal() { closeTopMenus(); openModal('infoModal'); }
+    function openResetModal() { closeTopMenus(); openModal('resetModal'); }
+
+    function buildHotkeyStrip() {
+      const strip = document.getElementById('hotkeyStrip');
+      const count = getVisibleHotkeyCount();
+      document.documentElement.style.setProperty('--hotkey-count', count);
+      strip.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const intent = getIntent(hotkeys[i]);
+        const card = document.createElement('div');
+        card.className = 'hotkey-card' + (i === activeSlot ? ' active' : '');
+        card.style.setProperty('--intent-color', intent.color);
+        card.addEventListener('mousedown', () => saveSelection());
+        card.addEventListener('click', e => {
+          if (e.target.tagName !== 'SELECT') activateSlot(i);
+        });
+
+        const head = document.createElement('div');
+        head.className = 'hotkey-head';
+        const key = document.createElement('div');
+        key.className = 'hotkey-key';
+        key.textContent = `F${i + 1}`;
+        const dot = document.createElement('div');
+        dot.className = 'intent-dot';
+        head.appendChild(key);
+        head.appendChild(dot);
+
+        const select = document.createElement('select');
+        select.className = 'intent-select';
+        select.title = intent.label;
+        intentLibrary.forEach(item => {
+          const opt = document.createElement('option');
+          opt.value = item.id;
+          opt.textContent = item.label;
+          if (item.id === intent.id) opt.selected = true;
+          select.appendChild(opt);
+        });
+        select.addEventListener('mousedown', () => saveSelection());
+        select.addEventListener('change', () => {
+          hotkeys[i] = select.value;
+          activateSlot(i);
+          buildHotkeyStrip();
+          updateActiveIntentUI();
+          note(`F${i + 1} set to ${getIntent(select.value).label}.`);
+        });
+
+        card.appendChild(head);
+        card.appendChild(select);
+        strip.appendChild(card);
+      }
+    }
+
+    function activateSlot(i) {
+      if (i >= getVisibleHotkeyCount()) return;
+      saveSelection();
+      activeSlot = i;
+      updateActiveIntentUI();
+      buildHotkeyStrip();
+      restoreSelection();
+      editor.focus();
+    }
+
+    function updateActiveIntentUI() {
+      const intent = getActiveIntent();
+      document.documentElement.style.setProperty('--active-intent', intent.color);
+      document.getElementById('activePill').textContent = `F${activeSlot + 1} · ${intent.label}`;
+      document.getElementById('surfaceTitle').textContent = currentMode === 'freeform' ? 'Writing Surface' : `Writing Surface · ${currentMode.charAt(0).toUpperCase() + currentMode.slice(1)}`;
+      updateChecks();
+    }
+
+    function saveSelection() {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) savedRange = sel.getRangeAt(0).cloneRange();
+    }
+    function restoreSelection() {
+      if (!savedRange) return;
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+    }
+    editor.addEventListener('keyup', saveSelection);
+    editor.addEventListener('mouseup', saveSelection);
+    editor.addEventListener('blur', saveSelection);
+    editor.addEventListener('focus', saveSelection);
+
+    function insertIntentText(text) {
+      restoreSelection();
+      editor.focus();
+      const sel = window.getSelection();
+      if (!sel.rangeCount) {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        sel.addRange(range);
+      }
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      const intent = getActiveIntent();
+      const span = document.createElement('span');
+      span.dataset.intent = intent.id;
+      span.style.color = intent.color;
+      span.textContent = text;
+      range.insertNode(span);
+      range.setStartAfter(span);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      savedRange = range.cloneRange();
+      keepCaretVisible();
+    }
+
+    editor.addEventListener('beforeinput', e => {
+      if (e.inputType === 'insertText' && e.data) { e.preventDefault(); insertIntentText(e.data); }
+      if (e.inputType === 'insertParagraph') { e.preventDefault(); insertIntentText('\n'); }
+    });
+    editor.addEventListener('paste', e => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      insertIntentText(text);
+    });
+    editor.addEventListener('keydown', e => {
+      if (/^F([1-9]|1[0-2])$/.test(e.key)) {
+        const idx = Number(e.key.slice(1)) - 1;
+        if (idx < getVisibleHotkeyCount()) { e.preventDefault(); activateSlot(idx); note(`Active intent: F${idx + 1} ${getActiveIntent().label}.`); }
+      }
+    });
+    editor.addEventListener('input', () => { saveSelection(); keepCaretVisible(); });
+
+    function keepCaretVisible() { requestAnimationFrame(() => { editor.scrollTop = editor.scrollHeight; }); }
+
+    function formatText(cmd) { restoreSelection(); editor.focus(); document.execCommand(cmd, false, null); saveSelection(); note(`${cmd.charAt(0).toUpperCase() + cmd.slice(1)} toggled.`); }
+
+    function setMode(mode) {
+      currentMode = mode;
+      closeTopMenus();
+      renderModeRow();
+      updateActiveIntentUI();
+      note(`Mode set to ${mode}.`);
+    }
+
+    function renderModeRow() {
+      modeRow.innerHTML = '';
+      if (currentMode === 'freeform') { modeRow.classList.remove('open'); return; }
+      modeRow.classList.add('open');
+      const slots = currentMode === 'prompt' ? promptSlots : sceneSlots;
+      slots.forEach(label => {
+        const btn = document.createElement('button');
+        btn.className = 'tool-btn dark shortcut';
+        btn.textContent = label;
+        btn.title = label;
+        btn.onclick = () => insertIntentText(label + (currentMode === 'prompt' ? ' ' : ''));
+        modeRow.appendChild(btn);
+      });
+      const setup = document.createElement('button');
+      setup.className = 'tool-btn setup';
+      setup.textContent = 'Setup';
+      setup.onclick = currentMode === 'prompt' ? openPromptSetup : openSceneSetup;
+      modeRow.appendChild(setup);
+    }
+
+    function openPromptSetup() {
+      const wrap = document.getElementById('promptChoices');
+      wrap.innerHTML = '';
+      promptBank.forEach(label => {
+        const lab = document.createElement('label');
+        lab.className = 'setup-check';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = label;
+        cb.checked = promptSlots.includes(label);
+        cb.addEventListener('change', () => {
+          const checked = [...wrap.querySelectorAll('input[type="checkbox"]:checked')];
+          if (checked.length > 5) cb.checked = false;
+        });
+        lab.appendChild(cb);
+        lab.appendChild(document.createTextNode(label));
+        wrap.appendChild(lab);
+      });
+      document.getElementById('promptCustom1').value = '';
+      document.getElementById('promptCustom2').value = '';
+      openModal('promptSetupModal');
+    }
+
+    function savePromptSetup() {
+      const checked = [...document.querySelectorAll('#promptChoices input[type="checkbox"]:checked')].map(cb => cb.value);
+      const custom = [document.getElementById('promptCustom1').value.trim(), document.getElementById('promptCustom2').value.trim()]
+        .filter(Boolean)
+        .map(v => v.endsWith(':') ? v : `${v}:`);
+      const next = [...checked, ...custom].slice(0, 5);
+      if (next.length) promptSlots = next;
+      closeModal('promptSetupModal');
+      renderModeRow();
+      note('Prompt shortcuts updated.');
+    }
+
+    function openSceneSetup() {
+      const wrap = document.getElementById('sceneFields');
+      wrap.innerHTML = '';
+      sceneSlots.forEach((label, i) => {
+        const field = document.createElement('div');
+        field.className = 'setup-field';
+        field.innerHTML = `<label>Slot ${i + 1}</label><input id="sceneSlot${i}" value="${escapeHtml(label)}" />`;
+        wrap.appendChild(field);
+      });
+      openModal('sceneSetupModal');
+    }
+
+    function saveSceneSetup() {
+      sceneSlots = sceneSlots.map((_, i) => document.getElementById(`sceneSlot${i}`).value.trim() || `Slot ${i + 1}`);
+      closeModal('sceneSetupModal');
+      renderModeRow();
+      note('Scene shortcuts updated.');
+    }
+
+    function getPlainAndSpans() {
+      let text = '';
+      const spans = [];
+      function walk(node, intentId) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const value = node.nodeValue || '';
+          if (!value) return;
+          const start = text.length;
+          text += value;
+          const end = text.length;
+          if (intentId) {
+            const last = spans[spans.length - 1];
+            if (last && last.intent === intentId && last.end === start) last.end = end;
+            else spans.push({ start, end, intent: intentId });
+          }
+          return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        const nextIntent = node.dataset && node.dataset.intent ? node.dataset.intent : intentId;
+        if (node.tagName === 'BR') { text += '\n'; return; }
+        node.childNodes.forEach(child => walk(child, nextIntent));
+      }
+      editor.childNodes.forEach(child => walk(child, null));
+      return { text, spans };
+    }
+
+    function generatePayload() {
+      const data = getPlainAndSpans();
+      const payload = {
+        app: 'Subtextual',
+        version: '0.5',
+        plain: data.text,
+        intentMap: data.spans.map(s => ({ ...s, label: getIntent(s.intent).label })),
+        visibleSlots: getVisibleHotkeyCount(),
+        mode: currentMode
+      };
+      output.value = JSON.stringify(payload, null, 2);
+      note('Generated semantic payload.');
+    }
+    async function copyPayload() {
+      if (!output.value.trim()) generatePayload();
+      try { await navigator.clipboard.writeText(output.value); note('Copied payload to clipboard.'); }
+      catch (err) { output.select(); document.execCommand('copy'); note('Copied payload using fallback copy.'); }
+    }
+    function clearPayload() { output.value = ''; note('Output cleared.'); }
+
+    function saveSubtextualFile() {
+      closeTopMenus();
+      const payload = {
+        app: 'Subtextual',
+        version: '0.5',
+        html: editor.innerHTML,
+        hotkeys,
+        activeSlot,
+        startupMode,
+        currentMode,
+        promptSlots,
+        sceneSlots,
+        view: { flavor: currentFlavor, pattern: currentPattern, screen: currentScreen, font: currentFont }
+      };
+      downloadFile('subtextual-document.subtextual.json', JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
+      note('Subtextual project saved.');
+    }
+    function savePlainText() { closeTopMenus(); const data = getPlainAndSpans(); downloadFile('subtextual-document.txt', data.text, 'text/plain;charset=utf-8'); note('Plain text saved.'); }
+    function downloadFile(name, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+    function triggerOpenFile() { closeTopMenus(); openFileInput.value = ''; openFileInput.click(); }
+    openFileInput.addEventListener('change', async () => {
+      const file = openFileInput.files[0];
+      if (!file) return;
+      const text = await file.text();
+      try {
+        const data = JSON.parse(text);
+        if (data.app === 'Subtextual' && typeof data.html === 'string') {
+          editor.innerHTML = data.html;
+          hotkeys = Array.isArray(data.hotkeys) ? data.hotkeys.slice(0, 12) : defaultHotkeyIds.slice();
+          while (hotkeys.length < 12) hotkeys.push('neutral');
+          activeSlot = Math.min(data.activeSlot || 0, getVisibleHotkeyCount() - 1);
+          startupMode = data.startupMode || startupMode;
+          promptSlots = Array.isArray(data.promptSlots) ? data.promptSlots.slice(0, 5) : promptSlots;
+          sceneSlots = Array.isArray(data.sceneSlots) ? data.sceneSlots.slice(0, 5) : sceneSlots;
+          if (data.view) { setFlavor(data.view.flavor || currentFlavor); setPattern(data.view.pattern || currentPattern); setScreen(data.view.screen || currentScreen); setFont(data.view.font || currentFont); }
+          setMode(data.currentMode || 'freeform');
+          buildHotkeyStrip(); updateActiveIntentUI(); note('Subtextual file loaded.'); return;
+        }
+      } catch (err) {}
+      editor.innerHTML = '';
+      insertIntentText(text);
+      note('Plain text loaded using the active intent.');
+    });
+
+    function clearWritingSurface(message) { editor.innerHTML = ''; output.value = ''; savedRange = null; note(message); }
+    function resetWritingOnly() { closeModal('resetModal'); clearWritingSurface('Writing only reset. Settings kept.'); }
+    function resetEverything() {
+      closeModal('resetModal');
+      if (startupMode === 'fresh') startFreshHotkeys(false); else loadDefaultHotkeys(false);
+      currentMode = 'freeform';
+      promptSlots = ['Subject:', 'Setting:', 'Action:', 'Style:', 'Mood:'];
+      sceneSlots = ['Character 1', 'Character 2', 'Place 1', 'Thing 1', 'Thing 2'];
+      renderModeRow();
+      clearWritingSurface('Reset everything to this session\'s startup state.');
+      buildHotkeyStrip(); updateActiveIntentUI();
+    }
+
+    function setFlavor(name) { currentFlavor = name; const f = flavorMap[name] || flavorMap.vanilla; document.documentElement.style.setProperty('--bar', f.bar); document.documentElement.style.setProperty('--bezel', f.bezel); document.documentElement.style.setProperty('--screen', f.screen); document.documentElement.style.setProperty('--panel', f.panel); document.documentElement.style.setProperty('--bg', f.bg); updateChecks(); }
+    function setPattern(name) { currentPattern = name; document.body.classList.remove('pattern-horizontal','pattern-vertical','pattern-diagonal','pattern-dots','pattern-chevron'); if (name !== 'none') document.body.classList.add(`pattern-${name}`); updateChecks(); }
+    function setScreen(name) {
+      currentScreen = name;
+      const bezel = document.getElementById('bezel');
+      bezel.classList.remove('wide','ultra');
+      if (name === 'wide') bezel.classList.add('wide');
+      if (name === 'ultra') bezel.classList.add('ultra');
+      if (activeSlot >= getVisibleHotkeyCount()) activeSlot = getVisibleHotkeyCount() - 1;
+      buildHotkeyStrip(); updateActiveIntentUI(); updateChecks(); note(`Screen set to ${name}. ${getVisibleHotkeyCount()} function keys visible.`);
+    }
+    function setFont(name) { currentFont = name; document.documentElement.style.setProperty('--editor-font', fontMap[name] || fontMap.system); updateChecks(); note(`Font set to ${name}.`); }
+    function updateChecks() {
+      document.querySelectorAll('[data-flavor]').forEach(el => el.querySelector('.check').classList.toggle('visible', el.dataset.flavor === currentFlavor));
+      document.querySelectorAll('[data-pattern]').forEach(el => el.querySelector('.check').classList.toggle('visible', el.dataset.pattern === currentPattern));
+      document.querySelectorAll('[data-screen]').forEach(el => el.querySelector('.check').classList.toggle('visible', el.dataset.screen === currentScreen));
+      document.querySelectorAll('[data-font]').forEach(el => el.querySelector('.check').classList.toggle('visible', el.dataset.font === currentFont));
+      document.querySelectorAll('[data-mode]').forEach(el => el.querySelector('.check').classList.toggle('visible', el.dataset.mode === currentMode));
+    }
+
+    function loadDefaultHotkeys(close = true) {
+      startupMode = 'defaults';
+      hotkeys = defaultHotkeyIds.slice();
+      while (hotkeys.length < 12) hotkeys.push('neutral');
+      activeSlot = 0;
+      if (close) closeModal('initModal');
+      clearWritingSurface('Defaults loaded.');
+      buildHotkeyStrip(); updateActiveIntentUI(); editor.focus();
+    }
+    function startFreshHotkeys(close = true) {
+      startupMode = 'fresh';
+      hotkeys = Array(12).fill('neutral');
+      activeSlot = 0;
+      if (close) closeModal('initModal');
+      clearWritingSurface('Fresh neutral setup loaded.');
+      buildHotkeyStrip(); updateActiveIntentUI(); editor.focus();
+    }
+    function loadDefaults() { loadDefaultHotkeys(true); }
+    function startFresh() { startFreshHotkeys(true); }
+
+    document.getElementById('sigil').addEventListener('click', e => { e.stopPropagation(); openInfoModal(); });
+
+    setFlavor('vanilla');
+    setPattern('none');
+    setScreen('standard');
+    setFont('system');
+    renderModeRow();
+    buildHotkeyStrip();
+    updateActiveIntentUI();
+  </script>
+</body>
+</html>
